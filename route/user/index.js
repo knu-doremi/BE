@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
     res.json({message: "User route works!"});
 });*/
 
-// 1) /api/user/login -> POST
+// 1) /api/login -> POST
 router.post('/login', async (req, res) => {
     try {
         const {userid, password} = req.body;
@@ -24,14 +24,14 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// 2) /api/user/register -> POST
+// 2) /api/register -> POST
 router.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
     // 여기에 회원가입 로직 추가
     res.json({ result: true, message: `Registered user ${username}` });
 });
 
-// 3) /api/user/searchpassword -> POST
+// 3) /api/searchpassword -> POST
 router.post('/searchpassword', async (req, res) => {
     try {
         const {username, userid, sex, birthdate} = req.body;
@@ -48,11 +48,19 @@ router.post('/searchpassword', async (req, res) => {
     }
 });
 
-// 4) /api/user/checkid -> GET
+// 4) /api/checkid -> GET
 router.get('/checkid', async (req, res) => {
-    const { username } = req.query;
-    // 여기에 아이디 중복 확인 로직 추가
-    res.json({ result: true, message: `Username ${username} is available` });
+    try {
+        const { userid } = req.query;
+        const count = await usermodel.checkid(userid);
+
+        if (count > 0) {
+            return res.status(400).json({ result: false, count: count, message: 'Username already exists' });
+        }
+        res.status(200).json({ result: true, count: count, message: 'Username is available' });
+    } catch (error) {
+        res.status(500).json({ result: false, message: 'Internal server error' });
+    }
 });
 
 

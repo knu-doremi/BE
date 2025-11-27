@@ -35,5 +35,20 @@ module.exports = {
         }
 
         return null; // 결과 없음
+    },
+
+    checkid: async (userid) => {
+        const sql = `
+            SELECT COUNT(*) AS COUNT
+            FROM USERS
+            WHERE User_id = :userid
+        `;
+        const result = await db.query(sql, { userid });
+
+        if (result.rows.length > 0) {
+            return Number(result.rows[0].COUNT); // 중복된 아이디 수 반환
+        }
+
+        return 0; // 결과 없음
     }
 };
