@@ -1,6 +1,6 @@
 const {Router} = require ("express");
-
 const router = Router();
+const usermodel = require ("../../models/user.js");
 
 // const userService = require ("$/../service/userService");
 
@@ -10,9 +10,19 @@ router.get('/', async (req, res) => {
 
 // 1) /api/user/login -> POST
 router.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-    // 여기에 로그인 로직 추가
-    res.json({ result: true, message: `Logged in as ${username}` });
+    try {
+        const {userid, password} = req.body;
+
+        const user = await usermodel.login(userid, password);
+
+        if (!user) {
+            return res.status(401).json({ result: false, message: 'Invalid userid or password' });
+        }
+
+        res.status(200).json({result: true, user: user});
+    } catch (error) {
+        res.status(500).json({ result: false, message: 'Internal server error' });
+    }
 });
 
 // 2) /api/user/register -> POST
