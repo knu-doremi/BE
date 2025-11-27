@@ -2,11 +2,10 @@ const {Router} = require ("express");
 const router = Router();
 const usermodel = require ("../../models/user.js");
 
-// const userService = require ("$/../service/userService");
-
+/*
 router.get('/', async (req, res) => {
     res.json({message: "User route works!"});
-});
+});*/
 
 // 1) /api/user/login -> POST
 router.post('/login', async (req, res) => {
@@ -34,9 +33,19 @@ router.post('/register', async (req, res) => {
 
 // 3) /api/user/searchpassword -> POST
 router.post('/searchpassword', async (req, res) => {
-    const { email } = req.body;
-    // 여기에 비밀번호 찾기 로직 추가
-    res.json({ result: true, message: `Password reset link sent to ${email}` });
+    try {
+        const {username, userid, sex, birthdate} = req.body;
+
+        const password  = await usermodel.searchpassword(username, userid, sex, birthdate);
+
+        if (!password) {
+            return res.status(401).json({ result: false, message: 'No matching user found' });
+        }
+
+        res.status(200).json({result: true, password: password});
+    } catch (error) {
+        res.status(500).json({ result: false, message: 'Internal server error' });
+    }
 });
 
 // 4) /api/user/checkid -> GET
