@@ -1,3 +1,4 @@
+const { autoCommit } = require("oracledb");
 let db = require("./oracle.js");
 
 module.exports = {
@@ -50,5 +51,14 @@ module.exports = {
         }
 
         return 0; // 결과 없음
+    },
+
+    register: async (userid, password, name, sex, birthdate) => {
+        const sql = `
+            INSERT INTO USERS (User_id, Password, Name, Sex, Birth_date)
+            VALUES (:userid, :password, :name, :sex, TO_DATE(:birthdate, 'YYYYMMDD'))
+        `;
+        const result = await db.query(sql, { userid, password, name, sex, birthdate }, {autoCommit: true});
+        return result;
     }
 };

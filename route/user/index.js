@@ -26,9 +26,15 @@ router.post('/login', async (req, res) => {
 
 // 2) /api/register -> POST
 router.post('/register', async (req, res) => {
-    const { username, password, email } = req.body;
-    // 여기에 회원가입 로직 추가
-    res.json({ result: true, message: `Registered user ${username}` });
+    try {
+        const {userid, password, name, sex, birthdate} = req.body;
+
+        await usermodel.register(userid, password, name, sex, birthdate);
+
+        res.status(200).json({result: true, message: 'User registered successfully'});
+    } catch (error) {
+        res.status(500).json({ result: false, message: 'Internal server error' });
+    }
 });
 
 // 3) /api/searchpassword -> POST
