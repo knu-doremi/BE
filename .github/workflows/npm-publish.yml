@@ -1,24 +1,54 @@
-name: Node.js CI/CD
+name: deploy
 
+# 구독할 이벤트
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
+  pull_request:
+    branches: [main]
 
+# jobs 단위로 개별 서버(정확히는 Docker 컨테이너 단위라고 한다.)에서 작업이 수행된다.
 jobs:
-  build:
-    runs-on: self-hosted
+  build-and-deploy:
+    # Ubuntu, Windows, MacOS를 지원한다.
+    runs-on: ubuntu-20.04
+
     strategy:
       matrix:
-        node-version: [20.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [24.11.1]
+
+    # uses 개념은 다른 사람이 작성한 내용을 실행하는 개념이다.
+    # run 개념은 명령어를 실행한다. 셸 스크립트와 동일하다.
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: cd /home/ubuntu/actions-runner/_work/node-cicd-swagger/node-cicd-swagger/bin
-    
-    - run: pm2 restart backendserver --update-env
+      - name: ✅ 소스코드 Checkout.
+        uses: actions/checkout@v3
+        # actions/checkout: GitHub의 마지막 커밋으로 Checkout 한다.
+
+      - name: ⚙️ ${{ matrix.node-version }} 버전의 노드로 세팅
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+        # actions/setup-node: Node.js를 설치한다.
+
+      - name: ⚙️ 환경변수 파일 설정
+        working-directory: ./
+        run: |
+          pwd
+          touch .env
+          echo PORT=${{ secrets.PORT }} >> .env
+          cat .env
+        # 깃헙의 레포 > Settings > Security > Secrets > Actions에 환경 변수를 미리 등록하자.
+
+      - name: ✨ 패키지 설치
+        working-directory: ./
+        run: npm install
+        
+      - name: ✨ Test 진행
+        run: npm test
+        # package.json에 정의된 script중 test를 이용하여 테스트 코드를 실행
+        
+      - name: ✨ 빌드 과정 시작
+        working-directory: ./
+        run: npm run build --if-present
+        # --if-present 옵션은 npm 스크립트가 존재할 때만 실행시키라는 의미이다.
+        # 만약 build 스크립트가 없는 경우, 오류 없이 지나간다.
