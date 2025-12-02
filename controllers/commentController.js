@@ -118,8 +118,65 @@ async function createComment(req, res) {
   }
 }
 
+/**
+ * 답글 작성 (댓글에 답글)
+ */
+async function createReply(req, res) {
+  try {
+    // PARENT_COMMENT_ID, USER_ID, TEXT 등 다양한 형식 지원
+    const PARENT_COMMENT_ID = req.body.PARENT_COMMENT_ID || req.body.Parent_comment_id || req.body.parentCommentId;
+    const USER_ID = req.body.USER_ID || req.body.User_id || req.body.userId;
+    const TEXT = req.body.TEXT || req.body.Text || req.body.text;
+    
+    if (!PARENT_COMMENT_ID || !USER_ID || !TEXT) {
+      return res.status(400).json({ 
+        result: false, 
+        error: 'PARENT_COMMENT_ID, USER_ID, TEXT가 필요합니다.' 
+      });
+    }
+    
+    const PARENT_COMMENT_ID_NUM = parseInt(PARENT_COMMENT_ID, 10);
+    if (isNaN(PARENT_COMMENT_ID_NUM)) {
+      return res.status(400).json({ 
+        result: false, 
+        error: '유효하지 않은 부모 댓글 ID입니다.' 
+      });
+    }
+    
+    // 부모 댓글 확인
+    const parentComment = await commentModel.getCommentById(PARENT_COMMENT_ID_NUM);
+    if (!parentComment) {
+      return res.status(404).json({ 
+        result: false, 
+        error: '부모 댓글을 찾을 수 없습니다.' 
+      });
+    }
+    
+    // 답글 생성 (부모 댓글의 POST_ID 사용)
+    const COMMENT_ID = await commentModel.createComment(
+      parentComment.POST_ID, 
+      USER_ID, 
+      TEXT, 
+      PARENT_COMMENT_ID_NUM
+    );
+    
+    res.status(201).json({ 
+      result: true, 
+      message: '답글이 작성되었습니다.',
+      COMMENT_ID: COMMENT_ID 
+    });
+  } catch (error) {
+    console.error('답글 작성 오류:', error);
+    res.status(500).json({ 
+      result: false, 
+      error: error.message || '답글 작성 중 오류가 발생했습니다.' 
+    });
+  }
+}
+
 module.exports = {
   getComments,
   createComment,
+  createReply,
 };
 

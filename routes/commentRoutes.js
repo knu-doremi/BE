@@ -1,5 +1,5 @@
 const express = require('express');
-const { getComments, createComment } = require('../controllers/commentController');
+const { getComments, createComment, createReply } = require('../controllers/commentController');
 
 const router = express.Router();
 
@@ -10,6 +10,9 @@ router.get('/posts/:postId', getComments);
 
 // 댓글 작성 (게시물에 직접 댓글)
 router.post('/', createComment);
+
+// 답글 작성 (댓글에 답글)
+router.post('/reply', createReply);
 
 module.exports = router;
 
