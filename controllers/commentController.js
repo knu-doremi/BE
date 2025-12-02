@@ -174,9 +174,56 @@ async function createReply(req, res) {
   }
 }
 
+/**
+ * 댓글 삭제
+ */
+async function deleteComment(req, res) {
+  try {
+    // COMMENT_ID 등 다양한 형식 지원
+    const COMMENT_ID = req.params.COMMENT_ID || req.params.Comment_id || req.params.commentId;
+    
+    if (!COMMENT_ID) {
+      return res.status(400).json({ 
+        result: false, 
+        error: 'COMMENT_ID가 필요합니다.' 
+      });
+    }
+    
+    const COMMENT_ID_NUM = parseInt(COMMENT_ID, 10);
+    if (isNaN(COMMENT_ID_NUM)) {
+      return res.status(400).json({ 
+        result: false, 
+        error: '유효하지 않은 댓글 ID입니다.' 
+      });
+    }
+    
+    // 댓글 삭제
+    const deleted = await commentModel.deleteComment(COMMENT_ID_NUM);
+    
+    if (!deleted) {
+      return res.status(404).json({ 
+        result: false, 
+        error: '댓글을 찾을 수 없습니다.' 
+      });
+    }
+    
+    res.status(200).json({ 
+      result: true, 
+      message: '댓글이 삭제되었습니다.' 
+    });
+  } catch (error) {
+    console.error('댓글 삭제 오류:', error);
+    res.status(500).json({ 
+      result: false, 
+      error: error.message || '댓글 삭제 중 오류가 발생했습니다.' 
+    });
+  }
+}
+
 module.exports = {
   getComments,
   createComment,
   createReply,
+  deleteComment,
 };
 

@@ -1,5 +1,5 @@
 const express = require('express');
-const { getComments, createComment, createReply } = require('../controllers/commentController');
+const { getComments, createComment, createReply, deleteComment } = require('../controllers/commentController');
 
 const router = express.Router();
 
@@ -13,6 +13,11 @@ router.post('/', createComment);
 
 // 답글 작성 (댓글에 답글)
 router.post('/reply', createReply);
+
+// 댓글 삭제
+router.delete('/:COMMENT_ID', deleteComment);
+router.delete('/:Comment_id', deleteComment);
+router.delete('/:commentId', deleteComment);
 
 module.exports = router;
 
