@@ -6,7 +6,7 @@ app.use(cors());
 app.use(express.json());
 
 // /api/user 라우터 등록
-app.use('/api', require('./route/user'));
+app.use('/api/user', require('./route/user'));
 
 // 전역 에러 핸들러
 app.use((err, req, res, next) => {
