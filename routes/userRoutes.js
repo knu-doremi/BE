@@ -11,13 +11,11 @@ router.get('/', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const {userid, password} = req.body;
-
         const user = await usermodel.login(userid, password);
 
         if (!user) {
             return res.status(401).json({ result: false, message: 'Invalid userid or password' });
         }
-
         res.status(200).json({result: true, user: user});
     } catch (error) {
         res.status(500).json({ result: false, message: 'Internal server error' });
