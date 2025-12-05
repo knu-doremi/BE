@@ -166,8 +166,10 @@ async function deleteComment(COMMENT_ID) {
   }
 }
 
-module.exports = createComment;
-module.exports = getCommentsByPostId;
-module.exports = getRepliesByParentId;
-module.exports = getCommentById;
-module.exports = deleteComment;
+module.exports = {
+  createComment,
+  getCommentsByPostId,
+  getRepliesByParentId,
+  getCommentById,
+  deleteComment
+};
