@@ -3,10 +3,9 @@ const { getPool } = require("../config/db.js"); // pool 초기화된 db.js 가�
 module.exports = {
     // 로그인
     login: async (userid, password) => {
-        console.log("login model called");
         const sql = `
             SELECT User_id, Password, Name, Sex,
-                   TO_CHAR(Birth_date, 'YYYYMMDD') AS BirthStr
+                TO_CHAR(Birth_date, 'YYYYMMDD') AS BirthStr
             FROM USERS
             WHERE User_id = :userid AND Password = :password
         `;
@@ -16,10 +15,20 @@ module.exports = {
 
         try {
             const result = await conn.execute(sql, { userid, password });
-            if (result.rows.length > 0) {
-                return result.rows[0];  // 로그인 성공
+
+            if (result.rows.length === 0) {
+                return null;
             }
-            return null;
+
+            const row = result.rows[0];
+            const meta = result.metaData.map(col => col.name);
+
+            // 자동 매핑 (OBJECT 형태로)
+            const userObj = Object.fromEntries(
+                row.map((value, index) => [meta[index], value])
+            );
+
+            return userObj; // 배열 아님!
         } finally {
             await conn.close();
         }
@@ -42,7 +51,7 @@ module.exports = {
         try {
             const result = await conn.execute(sql, { username, userid, sex, birthdate });
             if (result.rows.length > 0) {
-                return result.rows[0].PASSWORD;
+                return result.rows[0][0];  // 비밀번호 반환
             }
             return null;
         } finally {
@@ -64,7 +73,7 @@ module.exports = {
         try {
             const result = await conn.execute(sql, { userid });
             if (result.rows.length > 0) {
-                return Number(result.rows[0].COUNT);
+                return Number(result.rows[0][0]);  // 중복된 아이디 수 반환
             }
             return 0;
         } finally {
@@ -89,8 +98,17 @@ module.exports = {
                 { autoCommit: true }
             );
             return result;
+        } catch (error) {
+            console.error("REGISTER ERROR:", error);
+
+            // 이미 존재하는 아이디일 때 Oracle Error Code 는 ORA-00001
+            if (error.errorNum === 1) {
+                return { duplicate: true }; // 컨트롤러에 전달할 목적
+            }
+
+            throw error;  // 다른 에러는 그대로 던짐
         } finally {
             await conn.close();
         }
     }
-};
+}
