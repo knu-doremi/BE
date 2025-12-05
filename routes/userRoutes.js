@@ -27,7 +27,11 @@ router.post('/register', async (req, res) => {
     try {
         const {userid, password, name, sex, birthdate} = req.body;
 
-        await usermodel.register(userid, password, name, sex, birthdate);
+        const result = await usermodel.register(userid, password, name, sex, birthdate);
+
+        if (result.duplicate) {
+            return res.status(400).json({ result: false, message: 'Username already exists' });
+        }
 
         res.status(200).json({result: true, message: 'User registered successfully'});
     } catch (error) {
