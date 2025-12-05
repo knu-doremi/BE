@@ -20,8 +20,8 @@ async function createComment(POST_ID, USER_ID, TEXT, PARENT_COMMENT_ID = null) {
   
   try {
     const result = await connection.execute(
-      `INSERT INTO COMMENTS (POST_ID, USER_ID, TEXT, PARENT_COMMENT_ID, CREATED_AT) 
-       VALUES (:post_id, :user_id, :text, :parent_comment_id, SYSDATE) 
+      `INSERT INTO COMMENTS (COMMENT_ID, POST_ID, USER_ID, TEXT, PARENT_COMMENT_ID, CREATED_AT) 
+       VALUES (NVL((SELECT MAX(COMMENT_ID) FROM COMMENTS), 0) + 1, :post_id, :user_id, :text, :parent_comment_id, SYSDATE) 
        RETURNING COMMENT_ID INTO :comment_id`,
       {
         post_id: { val: POST_ID, type: oracledb.NUMBER },
