@@ -224,6 +224,92 @@ async function getPostsByUserId(userId) {
   }
 }
 
+/**
+ * 추천 게시물 조회 (가중치 기반 알고리즘 적용)
+ * @param {string} userId - 사용자 ID
+ * @returns {Promise<Array>} 추천 게시물 목록
+ */
+async function getRecommendedPosts(userId) {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  
+  try {
+    const sql = `
+      WITH UserPrefs AS (
+        SELECT l.Label_name, COUNT(*) as Weight
+        FROM LIKES k
+        JOIN IMAGE i ON k.Post_id = i.Post_id
+        JOIN LABEL l ON i.Image_dir = l.Image_dir
+        WHERE k.User_id = :user_id
+        GROUP BY l.Label_name
+      ),
+      PostScores AS (
+        SELECT p.Post_id, SUM(up.Weight) as TotalScore
+        FROM POST p
+        JOIN IMAGE i ON p.Post_id = i.Post_id
+        JOIN LABEL l ON i.Image_dir = l.Image_dir
+        JOIN UserPrefs up ON l.Label_name = up.Label_name
+        WHERE p.User_id != :user_id
+        GROUP BY p.Post_id
+      )
+      SELECT p.Post_id, p.Content, p.Created_at, p.User_id,
+             (SELECT COUNT(*) FROM LIKES l WHERE l.Post_id = p.Post_id) as LikeCount,
+             NULL as RepImage
+      FROM POST p
+      JOIN PostScores ps ON p.Post_id = ps.Post_id
+      ORDER BY ps.TotalScore DESC, p.Created_at DESC
+    `;
+    
+    const result = await connection.execute(
+      sql,
+      {
+        user_id: userId,
+      },
+      {
+        fetchAsString: [oracledb.CLOB] // CLOB를 자동으로 문자열로 변환
+      }
+    );
+    
+    // 순환 참조 방지를 위해 명시적으로 값만 추출
+    const posts = [];
+    for (const row of result.rows) {
+      const returnedPostId = row[0] ? Number(row[0]) : null;
+      
+      // CONTENT 처리: fetchAsString 옵션으로 이미 문자열로 변환됨
+      let content = null;
+      if (row[1] != null) {
+        if (typeof row[1] === 'string') {
+          content = row[1];
+        } else if (row[1] && typeof row[1].getData === 'function') {
+          // getData()가 필요한 경우 (비동기)
+          content = await row[1].getData();
+          row[1].destroy(); // LOB 리소스 해제
+        } else {
+          content = String(row[1]);
+        }
+      }
+      
+      const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
+      const returnedUserId = row[3] ? String(row[3]) : null;
+      const likeCount = row[4] ? Number(row[4]) : 0;
+      const repImage = row[5] !== null ? String(row[5]) : null;
+      
+      posts.push({
+        postId: returnedPostId,
+        content: content,
+        createdAt: createdAt,
+        userId: returnedUserId,
+        likeCount: likeCount,
+        repImage: repImage,
+      });
+    }
+    
+    return posts;
+  } finally {
+    await connection.close();
+  }
+}
+
 module.exports = {
   createPost,
   getPostById,
@@ -231,5 +317,6 @@ module.exports = {
   updatePost,
   deletePost,
   getPostsByUserId,
+  getRecommendedPosts,
 };
 
