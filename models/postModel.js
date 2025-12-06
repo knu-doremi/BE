@@ -65,8 +65,7 @@ async function getPostById(postId) {
   try {
     const result = await connection.execute(
       `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID,
-              (SELECT COUNT(*) FROM LIKES l WHERE l.POST_ID = p.POST_ID) as LikeCount,
-              (SELECT Image_dir FROM IMAGE i WHERE i.Post_id = p.POST_ID AND ROWNUM = 1) as RepImage
+              (SELECT COUNT(*) FROM LIKES l WHERE l.POST_ID = p.POST_ID) as LikeCount
        FROM POST p 
        WHERE p.POST_ID = :post_id`,
       {
@@ -102,20 +101,19 @@ async function getPostById(postId) {
     const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
     const userId = row[3] ? String(row[3]) : null;
     const likeCount = row[4] ? Number(row[4]) : 0;
-    const repImage = row[5] !== null ? String(row[5]) : null;
     
-    // 해당 게시물의 모든 이미지 경로들 조회 (상세 조회이므로 전체 이미지 포함)
+    // 해당 게시물의 첫 번째 이미지 경로만 조회 (게시물당 이미지 하나만)
     const imageResult = await connection.execute(
-      `SELECT Image_dir FROM IMAGE WHERE Post_id = :post_id`,
+      `SELECT Image_dir FROM IMAGE WHERE Post_id = :post_id AND ROWNUM = 1`,
       {
         post_id: returnedPostId,
       }
     );
     
-    // 이미지 경로 배열 생성 (조회 시 /uploads/를 앞에 붙임)
-    const imageDirs = imageResult.rows
-      .map(imgRow => imgRow[0] ? formatImageDir(imgRow[0]) : null)
-      .filter(dir => dir !== null);
+    // 이미지 경로를 단일 문자열로 반환 (첫 번째 이미지만, /uploads/ 포함)
+    const imageDir = imageResult.rows.length > 0 && imageResult.rows[0][0] 
+      ? formatImageDir(imageResult.rows[0][0]) 
+      : null;
     
     return {
       postId: returnedPostId,
@@ -123,8 +121,7 @@ async function getPostById(postId) {
       createdAt: createdAt,
       userId: userId,
       likeCount: likeCount,
-      repImage: repImage ? formatImageDir(repImage) : null, // RepImage도 포맷팅
-      imageDirs: imageDirs, // 모든 이미지 경로 배열
+      imageDir: imageDir, // 단일 이미지 경로 (문자열)
     };
   } finally {
     await connection.close();
