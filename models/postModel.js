@@ -335,6 +335,80 @@ async function getRecommendedPosts(userId) {
   }
 }
 
+/**
+ * 팔로우한 유저의 게시물 목록 조회
+ * @param {string} userId - 사용자 ID (팔로워)
+ * @returns {Promise<Array>} 게시물 목록
+ */
+async function getFollowingPosts(userId) {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  
+  try {
+    // 게시물 조회
+    const result = await connection.execute(
+      `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID 
+       FROM POST p
+       JOIN FOLLOW f ON p.USER_ID = f.FOLLOWING_ID 
+       WHERE f.FOLLOWER_ID = :user_id 
+       ORDER BY p.CREATED_AT DESC`,
+      {
+        user_id: userId,
+      },
+      {
+        fetchAsString: [oracledb.CLOB] // CLOB를 자동으로 문자열로 변환
+      }
+    );
+    
+    // 순환 참조 방지를 위해 명시적으로 값만 추출
+    // fetchAsString 옵션으로 CLOB가 이미 문자열로 변환됨
+    const posts = [];
+    for (const row of result.rows) {
+      const returnedPostId = row[0] ? Number(row[0]) : null;
+      
+      // CONTENT 처리: fetchAsString 옵션으로 이미 문자열로 변환됨
+      let content = null;
+      if (row[1] != null) {
+        if (typeof row[1] === 'string') {
+          content = row[1];
+        } else if (row[1] && typeof row[1].getData === 'function') {
+          // getData()가 필요한 경우 (비동기)
+          content = await row[1].getData();
+          row[1].destroy(); // LOB 리소스 해제
+        } else {
+          content = String(row[1]);
+        }
+      }
+      
+      const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
+      const returnedUserId = row[3] ? String(row[3]) : null;
+      
+      // 해당 게시물의 이미지 경로들 조회
+      const imageResult = await connection.execute(
+        `SELECT Image_dir FROM IMAGE WHERE Post_id = :post_id`,
+        {
+          post_id: returnedPostId,
+        }
+      );
+      
+      // 이미지 경로 배열 생성
+      const imageDirs = imageResult.rows.map(imgRow => imgRow[0] ? String(imgRow[0]) : null).filter(dir => dir !== null);
+      
+      posts.push({
+        postId: returnedPostId,
+        content: content,
+        createdAt: createdAt,
+        userId: returnedUserId,
+        imageDirs: imageDirs, // 이미지 경로 배열 추가
+      });
+    }
+    
+    return posts;
+  } finally {
+    await connection.close();
+  }
+}
+
 module.exports = {
   createPost,
   getPostById,
@@ -343,5 +417,6 @@ module.exports = {
   deletePost,
   getPostsByUserId,
   getRecommendedPosts,
+  getFollowingPosts,
 };
 
