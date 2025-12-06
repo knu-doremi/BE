@@ -6,6 +6,7 @@ const { initializeDB, closePool } = require('./config/db');
 // 라우트 import
 const userRoutes = require('./routes/userRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const postRoutes = require('./routes/postRoutes');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/user', userRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/posts', postRoutes);
 
 // 서버 시작
 const PORT = process.env.PORT || 3000;

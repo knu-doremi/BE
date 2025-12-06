@@ -48,7 +48,7 @@ async function getPostById(postId) {
       `SELECT POST_ID, CONTENT, CREATED_AT, USER_ID 
        FROM POST WHERE POST_ID = :post_id`,
       {
-        post_id: { val: postId, type: oracledb.NUMBER },
+        post_id: postId,
       }
     );
     
@@ -57,11 +57,17 @@ async function getPostById(postId) {
     }
     
     const row = result.rows[0];
+    // 순환 참조를 방지하기 위해 명시적으로 값만 추출
+    const returnedPostId = row[0] ? Number(row[0]) : null;
+    const content = row[1] ? String(row[1]) : null;
+    const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
+    const userId = row[3] ? String(row[3]) : null;
+    
     return {
-      postId: row[0],
-      content: row[1],
-      createdAt: row[2],
-      userId: row[3],
+      postId: returnedPostId,
+      content: content,
+      createdAt: createdAt,
+      userId: userId,
     };
   } finally {
     await connection.close();
