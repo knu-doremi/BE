@@ -368,12 +368,11 @@ async function uploadPost(req, res) {
           const ext = path.extname(file.originalname);
           const filename = `${timestamp}_${file.originalname}`;
           const filePath = path.join(uploadDir, filename);
-          const relativeImageDir = `/uploads/${filename}`;
           
           fs.writeFileSync(filePath, file.buffer);
           
-          // IMAGE 테이블에 저장
-          const savedImageDir = await createImage(relativeImageDir, POST_ID);
+          // IMAGE 테이블에 파일명만 저장 (경로 제외)
+          const savedImageDir = await createImage(filename, POST_ID);
           imageDirs.push(savedImageDir);
           
           // 첫 번째 이미지를 대표 이미지로 설정
@@ -419,12 +418,13 @@ async function uploadPost(req, res) {
     }
     
     // 4. 성공 응답 (이미지 라벨링은 백그라운드에서 진행)
+    // 조회 시 /uploads/를 앞에 붙여서 사용하므로 응답에도 포함
     res.status(201).json({ 
       result: true, 
       message: '게시물이 작성되었습니다.',
       POST_ID: POST_ID,
-      imageDir: imageDir, // 대표 이미지 (첫 번째 이미지)
-      imageDirs: imageDirs, // 모든 이미지 경로 배열
+      imageDir: imageDir ? `/uploads/${imageDir}` : null, // 대표 이미지 (첫 번째 이미지)
+      imageDirs: imageDirs.map(dir => `/uploads/${dir}`), // 모든 이미지 경로 배열
       HASHTAGS: createdHashtags 
     });
   } catch (error) {

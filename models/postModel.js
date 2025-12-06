@@ -6,6 +6,18 @@ const oracledb = require('oracledb');
  */
 
 /**
+ * 이미지 경로 포맷팅 (조회 시 /uploads/를 앞에 붙임)
+ * @param {string} imageDir - DB에 저장된 이미지 경로 (파일명 또는 전체 경로)
+ * @returns {string} 포맷팅된 이미지 경로
+ */
+function formatImageDir(imageDir) {
+  if (!imageDir) return null;
+  const dir = String(imageDir);
+  // 이미 /uploads/로 시작하면 그대로 반환, 아니면 /uploads/를 붙임
+  return dir.startsWith('/uploads/') ? dir : `/uploads/${dir}`;
+}
+
+/**
  * 게시물 생성
  * @param {string} content - 게시물 내용
  * @param {string} userId - 작성자 ID
@@ -100,8 +112,10 @@ async function getPostById(postId) {
       }
     );
     
-    // 이미지 경로 배열 생성
-    const imageDirs = imageResult.rows.map(imgRow => imgRow[0] ? String(imgRow[0]) : null).filter(dir => dir !== null);
+    // 이미지 경로 배열 생성 (조회 시 /uploads/를 앞에 붙임)
+    const imageDirs = imageResult.rows
+      .map(imgRow => imgRow[0] ? formatImageDir(imgRow[0]) : null)
+      .filter(dir => dir !== null);
     
     return {
       postId: returnedPostId,
@@ -109,7 +123,7 @@ async function getPostById(postId) {
       createdAt: createdAt,
       userId: userId,
       likeCount: likeCount,
-      repImage: repImage,
+      repImage: repImage ? formatImageDir(repImage) : null, // RepImage도 포맷팅
       imageDirs: imageDirs, // 모든 이미지 경로 배열
     };
   } finally {
@@ -245,8 +259,10 @@ async function getPostsByUserId(userId) {
         }
       );
       
-      // 이미지 경로 배열 생성
-      const imageDirs = imageResult.rows.map(imgRow => imgRow[0] ? String(imgRow[0]) : null).filter(dir => dir !== null);
+      // 이미지 경로 배열 생성 (조회 시 /uploads/를 앞에 붙임)
+      const imageDirs = imageResult.rows
+        .map(imgRow => imgRow[0] ? formatImageDir(imgRow[0]) : null)
+        .filter(dir => dir !== null);
       
       posts.push({
         postId: returnedPostId,
@@ -417,8 +433,10 @@ async function getFollowingPosts(userId) {
         }
       );
       
-      // 이미지 경로 배열 생성
-      const imageDirs = imageResult.rows.map(imgRow => imgRow[0] ? String(imgRow[0]) : null).filter(dir => dir !== null);
+      // 이미지 경로 배열 생성 (조회 시 /uploads/를 앞에 붙임)
+      const imageDirs = imageResult.rows
+        .map(imgRow => imgRow[0] ? formatImageDir(imgRow[0]) : null)
+        .filter(dir => dir !== null);
       
       posts.push({
         postId: returnedPostId,
