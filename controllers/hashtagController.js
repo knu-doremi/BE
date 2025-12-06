@@ -1,4 +1,4 @@
-const { getPostIdsByHashtag } = require('../models/hashtagModel');
+const { getPostIdsByHashtag, getHashtagsByPostId } = require('../models/hashtagModel');
 const { getPostById } = require('../models/postModel');
 
 /**
@@ -65,6 +65,48 @@ async function searchPostsByHashtag(req, res) {
   }
 }
 
+/**
+ * 게시물 ID로 해시태그 목록 조회
+ */
+async function getHashtagsByPost(req, res) {
+  try {
+    const POST_ID = req.params.POST_ID || req.params.Post_id || req.params.postId || req.params.post_id;
+    
+    if (!POST_ID) {
+      return res.status(400).json({ 
+        result: false, 
+        error: 'POST_ID가 필요합니다.' 
+      });
+    }
+    
+    const POST_ID_NUM = parseInt(POST_ID, 10);
+    if (isNaN(POST_ID_NUM)) {
+      return res.status(400).json({ 
+        result: false, 
+        error: '유효하지 않은 게시물 ID입니다.' 
+      });
+    }
+    
+    const hashtags = await getHashtagsByPostId(POST_ID_NUM);
+    
+    res.status(200).json({ 
+      result: true, 
+      postId: POST_ID_NUM,
+      hashtags: hashtags,
+      count: hashtags.length
+    });
+  } catch (error) {
+    console.error('해시태그 조회 오류:', error);
+    console.error('에러 스택:', error.stack);
+    res.status(500).json({ 
+      result: false, 
+      error: error.message || '해시태그 조회 중 오류가 발생했습니다.',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+}
+
 module.exports = {
   searchPostsByHashtag,
+  getHashtagsByPost,
 };
