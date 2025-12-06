@@ -16,19 +16,26 @@ async function createPost(content, userId) {
   const connection = await pool.getConnection();
   
   try {
-    const result = await connection.execute(
-      `INSERT INTO POST (CONTENT, USER_ID, CREATED_AT) 
-       VALUES (:content, :user_id, SYSDATE) 
-       RETURNING POST_ID INTO :post_id`,
+    // Java 코드처럼 MAX(Post_id) + 1로 POST_ID 생성
+    const seqResult = await connection.execute(
+      `SELECT NVL(MAX(POST_ID), 0) + 1 as NEW_POST_ID FROM POST`
+    );
+    
+    const newPostId = seqResult.rows[0][0];
+    
+    // POST_ID를 명시적으로 지정하여 INSERT
+    await connection.execute(
+      `INSERT INTO POST (POST_ID, CONTENT, USER_ID, CREATED_AT) 
+       VALUES (:post_id, :content, :user_id, SYSDATE)`,
       {
+        post_id: newPostId,
         content: content,
         user_id: userId,
-        post_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT },
       },
       { autoCommit: true }
     );
     
-    return result.outBinds.post_id[0];
+    return newPostId;
   } finally {
     await connection.close();
   }
@@ -428,6 +435,87 @@ async function getFollowingPosts(userId) {
   }
 }
 
+/**
+ * 이미지 저장
+ * @param {string} imageDir - 이미지 경로
+ * @param {number} postId - 게시물 ID
+ * @returns {Promise<string>} 저장된 이미지 경로
+ */
+async function createImage(imageDir, postId) {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  
+  try {
+    await connection.execute(
+      `INSERT INTO IMAGE (Image_dir, Post_id) VALUES (:image_dir, :post_id)`,
+      {
+        image_dir: imageDir,
+        post_id: postId,
+      },
+      { autoCommit: true }
+    );
+    
+    return imageDir;
+  } finally {
+    await connection.close();
+  }
+}
+
+/**
+ * 라벨 저장
+ * @param {string} imageDir - 이미지 경로
+ * @param {Array<string>} labels - 라벨 배열
+ * @returns {Promise<void>}
+ */
+async function saveLabels(imageDir, labels) {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  
+  try {
+    for (const labelName of labels) {
+      await connection.execute(
+        `INSERT INTO LABEL (Label_name, Image_dir) VALUES (:label_name, :image_dir)`,
+        {
+          label_name: labelName,
+          image_dir: imageDir,
+        },
+        { autoCommit: true }
+      );
+    }
+  } finally {
+    await connection.close();
+  }
+}
+
+/**
+ * 해시태그 생성
+ * @param {string} hashtagName - 해시태그 이름
+ * @param {number} postId - 게시물 ID
+ * @returns {Promise<number>} 생성된 HASHTAG_ID
+ */
+async function createHashtag(hashtagName, postId) {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  
+  try {
+    const result = await connection.execute(
+      `INSERT INTO HASHTAG (Hashtag_id, Hashtag_name, Post_id) 
+       VALUES (NVL((SELECT MAX(Hashtag_id) FROM HASHTAG), 0) + 1, :hashtag_name, :post_id) 
+       RETURNING Hashtag_id INTO :hashtag_id`,
+      {
+        hashtag_name: hashtagName,
+        post_id: postId,
+        hashtag_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT },
+      },
+      { autoCommit: true }
+    );
+    
+    return result.outBinds.hashtag_id[0];
+  } finally {
+    await connection.close();
+  }
+}
+
 module.exports = {
   createPost,
   getPostById,
@@ -437,5 +525,8 @@ module.exports = {
   getPostsByUserId,
   getRecommendedPosts,
   getFollowingPosts,
+  createImage,
+  saveLabels,
+  createHashtag,
 };
 
