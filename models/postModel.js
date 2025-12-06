@@ -35,7 +35,7 @@ async function createPost(content, userId) {
 }
 
 /**
- * 게시물 조회
+ * 게시물 상세 조회
  * @param {number} postId - 게시물 ID
  * @returns {Promise<Object|null>} 게시물 정보
  */
@@ -45,8 +45,11 @@ async function getPostById(postId) {
   
   try {
     const result = await connection.execute(
-      `SELECT POST_ID, CONTENT, CREATED_AT, USER_ID 
-       FROM POST WHERE POST_ID = :post_id`,
+      `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID,
+              (SELECT COUNT(*) FROM LIKES l WHERE l.POST_ID = p.POST_ID) as LikeCount,
+              (SELECT Image_dir FROM IMAGE i WHERE i.Post_id = p.POST_ID AND ROWNUM = 1) as RepImage
+       FROM POST p 
+       WHERE p.POST_ID = :post_id`,
       {
         post_id: postId,
       },
@@ -79,12 +82,28 @@ async function getPostById(postId) {
     
     const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
     const userId = row[3] ? String(row[3]) : null;
+    const likeCount = row[4] ? Number(row[4]) : 0;
+    const repImage = row[5] !== null ? String(row[5]) : null;
+    
+    // 해당 게시물의 모든 이미지 경로들 조회 (상세 조회이므로 전체 이미지 포함)
+    const imageResult = await connection.execute(
+      `SELECT Image_dir FROM IMAGE WHERE Post_id = :post_id`,
+      {
+        post_id: returnedPostId,
+      }
+    );
+    
+    // 이미지 경로 배열 생성
+    const imageDirs = imageResult.rows.map(imgRow => imgRow[0] ? String(imgRow[0]) : null).filter(dir => dir !== null);
     
     return {
       postId: returnedPostId,
       content: content,
       createdAt: createdAt,
       userId: userId,
+      likeCount: likeCount,
+      repImage: repImage,
+      imageDirs: imageDirs, // 모든 이미지 경로 배열
     };
   } finally {
     await connection.close();

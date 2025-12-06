@@ -39,6 +39,9 @@ async function getPost(req, res) {
       content: post.content,
       createdAt: post.createdAt,
       userId: post.userId,
+      likeCount: post.likeCount || 0,
+      repImage: post.repImage || null,
+      imageDirs: post.imageDirs || [], // 모든 이미지 경로 배열
     };
     
     res.status(200).json({ 
