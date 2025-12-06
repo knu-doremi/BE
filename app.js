@@ -7,6 +7,7 @@ const { initializeDB, closePool } = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const postRoutes = require('./routes/postRoutes');
+const hashtagRoutes = require('./routes/hashtagRoutes');
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/user', userRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/hashtags', hashtagRoutes);
 
 // 서버 시작
 const PORT = process.env.PORT || 3000;
