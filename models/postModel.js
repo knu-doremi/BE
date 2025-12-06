@@ -150,34 +150,37 @@ async function deletePost(postId) {
 /**
  * 사용자의 게시물 목록 조회
  * @param {string} userId - 사용자 ID
- * @param {number} limit - 조회 개수 제한
- * @param {number} offset - 오프셋
  * @returns {Promise<Array>} 게시물 목록
  */
-async function getPostsByUserId(userId, limit = 20, offset = 0) {
+async function getPostsByUserId(userId) {
   const pool = getPool();
   const connection = await pool.getConnection();
   
   try {
     const result = await connection.execute(
-      `SELECT POST_ID, CONTENT, CREATED_AT, USER_ID 
-       FROM POST 
-       WHERE USER_ID = :user_id 
-       ORDER BY CREATED_AT DESC
-       OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY`,
+      `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID 
+       FROM POST p, USERS u 
+       WHERE p.USER_ID = u.USER_ID AND p.USER_ID = :user_id 
+       ORDER BY p.CREATED_AT DESC`,
       {
         user_id: userId,
-        limit: { val: limit, type: oracledb.NUMBER },
-        offset: { val: offset, type: oracledb.NUMBER },
       }
     );
     
-    return result.rows.map(row => ({
-      postId: row[0],
-      content: row[1],
-      createdAt: row[2],
-      userId: row[3],
-    }));
+    // 순환 참조 방지를 위해 명시적으로 값만 추출
+    return result.rows.map(row => {
+      const returnedPostId = row[0] ? Number(row[0]) : null;
+      const content = row[1] ? String(row[1]) : null;
+      const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
+      const returnedUserId = row[3] ? String(row[3]) : null;
+      
+      return {
+        postId: returnedPostId,
+        content: content,
+        createdAt: createdAt,
+        userId: returnedUserId,
+      };
+    });
   } finally {
     await connection.close();
   }

@@ -1,4 +1,4 @@
-const { getPostById } = require('../models/postModel');
+const { getPostById, getPostsByUserId } = require('../models/postModel');
 
 /**
  * post_id를 통해서 게시물 조회
@@ -56,6 +56,48 @@ async function getPost(req, res) {
   }
 }
 
+/**
+ * user_id를 통해서 게시물 목록 조회
+ */
+async function getPostsByUser(req, res) {
+  try {
+    // USER_ID 등 다양한 형식 지원
+    const USER_ID = req.params.USER_ID || req.params.User_id || req.params.userId || req.params.user_id;
+    
+    if (!USER_ID) {
+      return res.status(400).json({ 
+        result: false, 
+        error: 'USER_ID가 필요합니다.' 
+      });
+    }
+    
+    // 게시물 목록 조회
+    const posts = await getPostsByUserId(USER_ID);
+    
+    // 순환 참조 방지를 위해 명시적으로 배열 정리
+    const cleanPosts = posts.map(post => ({
+      postId: post.postId,
+      content: post.content,
+      createdAt: post.createdAt,
+      userId: post.userId,
+    }));
+    
+    res.status(200).json({ 
+      result: true, 
+      posts: cleanPosts 
+    });
+  } catch (error) {
+    console.error('게시물 목록 조회 오류:', error);
+    console.error('에러 스택:', error.stack);
+    res.status(500).json({ 
+      result: false, 
+      error: error.message || '게시물 목록 조회 중 오류가 발생했습니다.',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+}
+
 module.exports = {
   getPost,
+  getPostsByUser,
 };
