@@ -186,8 +186,7 @@ async function getRecommendedPostsByUser(req, res) {
       createdAt: post.createdAt,
       userId: post.userId,
       likeCount: post.likeCount,
-      repImage: post.repImage,
-      imageDirs: post.imageDirs || [], // 이미지 경로 배열 포함
+      imageDir: post.imageDir || null, // 단일 이미지 경로 (문자열)
     }));
     
     res.status(200).json({ 

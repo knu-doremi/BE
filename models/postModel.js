@@ -308,8 +308,7 @@ async function getRecommendedPosts(userId) {
         GROUP BY p.Post_id
       )
       SELECT p.Post_id, p.Content, p.Created_at, p.User_id,
-             (SELECT COUNT(*) FROM LIKES l WHERE l.Post_id = p.Post_id) as LikeCount,
-             NULL as RepImage
+             (SELECT COUNT(*) FROM LIKES l WHERE l.Post_id = p.Post_id) as LikeCount
       FROM POST p
       JOIN PostScores ps ON p.Post_id = ps.Post_id
       ORDER BY ps.TotalScore DESC, p.Created_at DESC
@@ -347,18 +346,19 @@ async function getRecommendedPosts(userId) {
       const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
       const returnedUserId = row[3] ? String(row[3]) : null;
       const likeCount = row[4] ? Number(row[4]) : 0;
-      const repImage = row[5] !== null ? String(row[5]) : null;
       
-      // 해당 게시물의 이미지 경로들 조회
+      // 해당 게시물의 첫 번째 이미지 경로만 조회 (게시물당 이미지 하나만)
       const imageResult = await connection.execute(
-        `SELECT Image_dir FROM IMAGE WHERE Post_id = :post_id`,
+        `SELECT Image_dir FROM IMAGE WHERE Post_id = :post_id AND ROWNUM = 1`,
         {
           post_id: returnedPostId,
         }
       );
       
-      // 이미지 경로 배열 생성
-      const imageDirs = imageResult.rows.map(imgRow => imgRow[0] ? String(imgRow[0]) : null).filter(dir => dir !== null);
+      // 이미지 경로를 단일 문자열로 반환 (첫 번째 이미지만, /uploads/ 포함)
+      const imageDir = imageResult.rows.length > 0 && imageResult.rows[0][0] 
+        ? formatImageDir(imageResult.rows[0][0]) 
+        : null;
       
       posts.push({
         postId: returnedPostId,
@@ -366,8 +366,7 @@ async function getRecommendedPosts(userId) {
         createdAt: createdAt,
         userId: returnedUserId,
         likeCount: likeCount,
-        repImage: repImage,
-        imageDirs: imageDirs, // 이미지 경로 배열 추가
+        imageDir: imageDir, // 단일 이미지 경로 (문자열)
       });
     }
     
