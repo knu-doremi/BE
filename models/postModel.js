@@ -49,6 +49,9 @@ async function getPostById(postId) {
        FROM POST WHERE POST_ID = :post_id`,
       {
         post_id: postId,
+      },
+      {
+        fetchAsString: [oracledb.CLOB] // CLOB를 자동으로 문자열로 변환
       }
     );
     
@@ -59,7 +62,21 @@ async function getPostById(postId) {
     const row = result.rows[0];
     // 순환 참조를 방지하기 위해 명시적으로 값만 추출
     const returnedPostId = row[0] ? Number(row[0]) : null;
-    const content = row[1] ? String(row[1]) : null;
+    
+    // CONTENT 처리: fetchAsString 옵션으로 이미 문자열로 변환됨
+    let content = null;
+    if (row[1] != null) {
+      if (typeof row[1] === 'string') {
+        content = row[1];
+      } else if (row[1] && typeof row[1].getData === 'function') {
+        // getData()가 필요한 경우 (비동기)
+        content = await row[1].getData();
+        row[1].destroy(); // LOB 리소스 해제
+      } else {
+        content = String(row[1]);
+      }
+    }
+    
     const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
     const userId = row[3] ? String(row[3]) : null;
     
@@ -164,23 +181,44 @@ async function getPostsByUserId(userId) {
        ORDER BY p.CREATED_AT DESC`,
       {
         user_id: userId,
+      },
+      {
+        fetchAsString: [oracledb.CLOB] // CLOB를 자동으로 문자열로 변환
       }
     );
     
     // 순환 참조 방지를 위해 명시적으로 값만 추출
-    return result.rows.map(row => {
+    // fetchAsString 옵션으로 CLOB가 이미 문자열로 변환됨
+    const posts = [];
+    for (const row of result.rows) {
       const returnedPostId = row[0] ? Number(row[0]) : null;
-      const content = row[1] ? String(row[1]) : null;
+      
+      // CONTENT 처리: fetchAsString 옵션으로 이미 문자열로 변환됨
+      let content = null;
+      if (row[1] != null) {
+        if (typeof row[1] === 'string') {
+          content = row[1];
+        } else if (row[1] && typeof row[1].getData === 'function') {
+          // getData()가 필요한 경우 (비동기)
+          content = await row[1].getData();
+          row[1].destroy(); // LOB 리소스 해제
+        } else {
+          content = String(row[1]);
+        }
+      }
+      
       const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
       const returnedUserId = row[3] ? String(row[3]) : null;
       
-      return {
+      posts.push({
         postId: returnedPostId,
         content: content,
         createdAt: createdAt,
         userId: returnedUserId,
-      };
-    });
+      });
+    }
+    
+    return posts;
   } finally {
     await connection.close();
   }
