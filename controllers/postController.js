@@ -80,6 +80,7 @@ async function getPostsByUser(req, res) {
       content: post.content,
       createdAt: post.createdAt,
       userId: post.userId,
+      imageDirs: post.imageDirs || [], // 이미지 경로 배열 포함
     }));
     
     res.status(200).json({ 

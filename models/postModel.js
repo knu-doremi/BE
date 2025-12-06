@@ -174,6 +174,7 @@ async function getPostsByUserId(userId) {
   const connection = await pool.getConnection();
   
   try {
+    // 게시물 조회
     const result = await connection.execute(
       `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID 
        FROM POST p, USERS u 
@@ -210,11 +211,23 @@ async function getPostsByUserId(userId) {
       const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
       const returnedUserId = row[3] ? String(row[3]) : null;
       
+      // 해당 게시물의 이미지 경로들 조회
+      const imageResult = await connection.execute(
+        `SELECT Image_dir FROM IMAGE WHERE Post_id = :post_id`,
+        {
+          post_id: returnedPostId,
+        }
+      );
+      
+      // 이미지 경로 배열 생성
+      const imageDirs = imageResult.rows.map(imgRow => imgRow[0] ? String(imgRow[0]) : null).filter(dir => dir !== null);
+      
       posts.push({
         postId: returnedPostId,
         content: content,
         createdAt: createdAt,
         userId: returnedUserId,
+        imageDirs: imageDirs, // 이미지 경로 배열 추가
       });
     }
     
