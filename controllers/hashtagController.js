@@ -1,4 +1,4 @@
-const { getPostIdsByHashtag, getHashtagsByPostId } = require('../models/hashtagModel');
+const { getPostIdsByHashtag, getHashtagsByPostId, searchHashtags } = require('../models/hashtagModel');
 const { getPostById } = require('../models/postModel');
 
 /**
@@ -106,7 +106,51 @@ async function getHashtagsByPost(req, res) {
   }
 }
 
+/**
+ * 해시태그 자동완성 검색
+ */
+async function searchHashtagsByTerm(req, res) {
+  try {
+    // search 등 다양한 형식 지원 (search를 우선순위로)
+    const searchTerm = req.query.search || req.query.searchTerm || req.query.q || req.query.SEARCH_TERM;
+    const limit = parseInt(req.query.limit || req.query.LIMIT || '10', 10);
+    
+    if (!searchTerm) {
+      return res.status(400).json({ 
+        result: false, 
+        error: '검색어가 필요합니다.' 
+      });
+    }
+    
+    if (isNaN(limit) || limit < 1 || limit > 100) {
+      return res.status(400).json({ 
+        result: false, 
+        error: 'limit은 1부터 100 사이의 숫자여야 합니다.' 
+      });
+    }
+    
+    // 해시태그 검색
+    const hashtags = await searchHashtags(searchTerm, limit);
+    
+    res.status(200).json({ 
+      result: true, 
+      searchTerm: searchTerm,
+      hashtags: hashtags,
+      count: hashtags.length
+    });
+  } catch (error) {
+    console.error('해시태그 자동완성 검색 오류:', error);
+    console.error('에러 스택:', error.stack);
+    res.status(500).json({ 
+      result: false, 
+      error: error.message || '해시태그 검색 중 오류가 발생했습니다.',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+}
+
 module.exports = {
   searchPostsByHashtag,
   getHashtagsByPost,
+  searchHashtagsByTerm,
 };

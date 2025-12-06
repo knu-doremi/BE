@@ -200,6 +200,41 @@ async function hashtagExists(hashtagName, postId) {
   }
 }
 
+/**
+ * 해시태그 자동완성 검색
+ * @param {string} searchTerm - 검색어
+ * @param {number} limit - 조회할 해시태그 개수 (기본값: 10)
+ * @returns {Promise<Array>} 해시태그 목록
+ */
+async function searchHashtags(searchTerm, limit = 10) {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  
+  try {
+    const result = await connection.execute(
+      `SELECT DISTINCT Hashtag_name, COUNT(*) as PostCount
+       FROM HASHTAG
+       WHERE UPPER(Hashtag_name) LIKE UPPER(:search_term)
+       GROUP BY Hashtag_name
+       ORDER BY PostCount DESC, Hashtag_name
+       FETCH FIRST :limit ROWS ONLY`,
+      {
+        search_term: `%${searchTerm}%`,
+        limit: limit,
+      }
+    );
+    
+    const hashtags = result.rows.map(row => ({
+      hashtagName: row[0] ? String(row[0]) : null,
+      postCount: row[1] ? Number(row[1]) : 0,
+    }));
+    
+    return hashtags;
+  } finally {
+    await connection.close();
+  }
+}
+
 module.exports = {
   createHashtag,
   getHashtagsByPostId,
@@ -208,4 +243,5 @@ module.exports = {
   deleteHashtagsByPostId,
   getPopularHashtags,
   hashtagExists,
+  searchHashtags,
 };
