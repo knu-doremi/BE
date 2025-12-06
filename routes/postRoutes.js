@@ -1,5 +1,5 @@
 const express = require('express');
-const { getPost, getPostsByUser, getRecommendedPostsByUser, getFollowingPostsByUser } = require('../controllers/postController');
+const { getPost, getPostsByUser, getRecommendedPostsByUser, getFollowingPostsByUser, deletePostByUser } = require('../controllers/postController');
 
 const router = express.Router();
 
@@ -11,6 +11,9 @@ router.get('/following/:user_id', getFollowingPostsByUser);
 
 // user_id를 통해서 게시물 목록 조회
 router.get('/user/:user_id', getPostsByUser);
+
+// post_id를 통해서 게시물 삭제
+router.delete('/:post_id', deletePostByUser);
 
 // post_id를 통해서 게시물 조회
 router.get('/:post_id', getPost);

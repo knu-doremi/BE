@@ -1,4 +1,4 @@
-const { getPostById, getPostsByUserId, getRecommendedPosts, getFollowingPosts } = require('../models/postModel');
+const { getPostById, getPostsByUserId, getRecommendedPosts, getFollowingPosts, deletePost } = require('../models/postModel');
 
 /**
  * post_id를 통해서 게시물 조회
@@ -187,9 +187,87 @@ async function getFollowingPostsByUser(req, res) {
   }
 }
 
+/**
+ * 게시물 삭제
+ */
+async function deletePostByUser(req, res) {
+  try {
+    // POST_ID 등 다양한 형식 지원
+    const POST_ID = req.params.POST_ID || req.params.Post_id || req.params.postId || req.params.post_id;
+    
+    if (!POST_ID) {
+      return res.status(400).json({ 
+        result: false, 
+        error: 'POST_ID가 필요합니다.' 
+      });
+    }
+    
+    const POST_ID_NUM = parseInt(POST_ID, 10);
+    if (isNaN(POST_ID_NUM)) {
+      return res.status(400).json({ 
+        result: false, 
+        error: '유효하지 않은 게시물 ID입니다.' 
+      });
+    }
+    
+    // USER_ID 등 다양한 형식 지원 (body 또는 query에서)
+    const USER_ID = req.body.USER_ID || req.body.User_id || req.body.userId || req.body.user_id ||
+                    req.query.USER_ID || req.query.User_id || req.query.userId || req.query.user_id;
+    
+    if (!USER_ID) {
+      return res.status(400).json({ 
+        result: false, 
+        error: 'USER_ID가 필요합니다.' 
+      });
+    }
+    
+    // 게시물 조회하여 작성자 확인
+    const post = await getPostById(POST_ID_NUM);
+    
+    if (!post) {
+      return res.status(404).json({ 
+        result: false, 
+        error: '게시물을 찾을 수 없습니다.' 
+      });
+    }
+    
+    // 작성자와 현재 사용자가 일치하는지 확인
+    if (post.userId !== USER_ID) {
+      return res.status(403).json({ 
+        result: false, 
+        error: '게시물을 삭제할 권한이 없습니다.' 
+      });
+    }
+    
+    // 게시물 삭제
+    const deleted = await deletePost(POST_ID_NUM);
+    
+    if (!deleted) {
+      return res.status(500).json({ 
+        result: false, 
+        error: '게시물 삭제에 실패했습니다.' 
+      });
+    }
+    
+    res.status(200).json({ 
+      result: true, 
+      message: '게시물이 삭제되었습니다.' 
+    });
+  } catch (error) {
+    console.error('게시물 삭제 오류:', error);
+    console.error('에러 스택:', error.stack);
+    res.status(500).json({ 
+      result: false, 
+      error: error.message || '게시물 삭제 중 오류가 발생했습니다.',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+}
+
 module.exports = {
   getPost,
   getPostsByUser,
   getRecommendedPostsByUser,
   getFollowingPostsByUser,
+  deletePostByUser,
 };
