@@ -307,6 +307,17 @@ async function getRecommendedPosts(userId) {
       const likeCount = row[4] ? Number(row[4]) : 0;
       const repImage = row[5] !== null ? String(row[5]) : null;
       
+      // 해당 게시물의 이미지 경로들 조회
+      const imageResult = await connection.execute(
+        `SELECT Image_dir FROM IMAGE WHERE Post_id = :post_id`,
+        {
+          post_id: returnedPostId,
+        }
+      );
+      
+      // 이미지 경로 배열 생성
+      const imageDirs = imageResult.rows.map(imgRow => imgRow[0] ? String(imgRow[0]) : null).filter(dir => dir !== null);
+      
       posts.push({
         postId: returnedPostId,
         content: content,
@@ -314,6 +325,7 @@ async function getRecommendedPosts(userId) {
         userId: returnedUserId,
         likeCount: likeCount,
         repImage: repImage,
+        imageDirs: imageDirs, // 이미지 경로 배열 추가
       });
     }
     
