@@ -3,9 +3,16 @@ const router = Router();
 const bookmarkModel = require ("../models/bookmarkModel.js");
 console.log("📌 bookmarkRoutes loaded");
 
-router.get('', async (req, res) => {
+router.post('/list', async (req, res) => {
     try {
-        const { userId } = req.params;
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({
+                result: false,
+                message: "userId is required"
+            });
+        }
 
         const posts = await bookmarkModel.findBookmarkedPosts(userId);
 
