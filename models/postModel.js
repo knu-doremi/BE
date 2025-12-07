@@ -117,6 +117,20 @@ async function getPostById(postId) {
       ? formatImageDir(imageResult.rows[0][0]) 
       : null;
     
+    // 해당 게시물의 해시태그 목록 조회
+    const hashtagResult = await connection.execute(
+      `SELECT Hashtag_id, Hashtag_name FROM HASHTAG WHERE Post_id = :post_id ORDER BY Hashtag_id`,
+      {
+        post_id: returnedPostId,
+      }
+    );
+    
+    // 해시태그 배열 생성
+    const hashtags = hashtagResult.rows.map(row => ({
+      hashtagId: row[0] ? Number(row[0]) : null,
+      hashtagName: row[1] ? String(row[1]) : null,
+    }));
+    
     return {
       postId: returnedPostId,
       content: content,
@@ -125,6 +139,7 @@ async function getPostById(postId) {
       username: username,
       likeCount: likeCount,
       imageDir: imageDir, // 단일 이미지 경로 (문자열)
+      hashtags: hashtags, // 해시태그 배열
     };
   } finally {
     await connection.close();
