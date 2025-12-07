@@ -26,5 +26,31 @@ module.exports = {
         } finally {
             await conn.close();
         }
+    },
+
+    addBookmark: async (postId, userId) => {
+        const sql = `
+            INSERT INTO BOOKMARK (Bookmark_id, Post_id, User_id)
+            VALUES (
+                (SELECT NVL(MAX(Bookmark_id), 0) + 1 FROM BOOKMARK),
+                :postId,
+                :userId
+            )
+        `;
+
+        const pool = getPool();
+        const conn = await pool.getConnection();
+
+        try {
+            const result = await conn.execute(
+                sql,
+                { postId, userId },
+                { autoCommit: true }
+            );
+
+            return result.rowsAffected > 0;
+        } finally {
+            await conn.close();
+        }
     }
 }
