@@ -101,18 +101,20 @@ module.exports = {
             const result = await conn.execute(
                 sql,
                 { userId },
-                { outFormat: 4002 } // OBJECT
+                { outFormat: 4002 }
             );
 
-            // OracleDB → JS Object 결과 매핑
-            return result.rows.map(row => ({
+            // 안전한 매핑
+            const posts = result.rows.map(row => ({
                 postId: row.POST_ID,
-                content: row.CONTENT,
+                content: row.Content,
                 createdAt: row.CREATED_AT,
                 userId: row.USER_ID,
                 repImage: row.REPIMAGE,
                 likeCount: row.LIKECOUNT
             }));
+
+            return posts;   // ← 이 값만 JSON으로 반환됨 (circle 없음)
 
         } finally {
             await conn.close();
