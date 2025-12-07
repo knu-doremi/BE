@@ -307,9 +307,10 @@ async function getRecommendedPosts(userId) {
         WHERE p.User_id != :user_id
         GROUP BY p.Post_id
       )
-      SELECT p.Post_id, p.Content, p.Created_at, p.User_id,
+      SELECT p.Post_id, p.Content, p.Created_at, p.User_id, u.Name,
              (SELECT COUNT(*) FROM LIKES l WHERE l.Post_id = p.Post_id) as LikeCount
       FROM POST p
+      LEFT JOIN USERS u ON p.User_id = u.User_id
       JOIN PostScores ps ON p.Post_id = ps.Post_id
       ORDER BY ps.TotalScore DESC, p.Created_at DESC
     `;
@@ -345,7 +346,8 @@ async function getRecommendedPosts(userId) {
       
       const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
       const returnedUserId = row[3] ? String(row[3]) : null;
-      const likeCount = row[4] ? Number(row[4]) : 0;
+      const username = row[4] ? String(row[4]) : null;
+      const likeCount = row[5] ? Number(row[5]) : 0;
       
       // 해당 게시물의 첫 번째 이미지 경로만 조회 (게시물당 이미지 하나만)
       const imageResult = await connection.execute(
@@ -365,6 +367,7 @@ async function getRecommendedPosts(userId) {
         content: content,
         createdAt: createdAt,
         userId: returnedUserId,
+        username: username,
         likeCount: likeCount,
         imageDir: imageDir, // 단일 이미지 경로 (문자열)
       });
