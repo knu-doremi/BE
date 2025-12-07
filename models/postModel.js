@@ -64,9 +64,10 @@ async function getPostById(postId) {
   
   try {
     const result = await connection.execute(
-      `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID,
+      `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID, u.NAME,
               (SELECT COUNT(*) FROM LIKES l WHERE l.POST_ID = p.POST_ID) as LikeCount
        FROM POST p 
+       LEFT JOIN USERS u ON p.USER_ID = u.USER_ID
        WHERE p.POST_ID = :post_id`,
       {
         post_id: postId,
@@ -100,7 +101,8 @@ async function getPostById(postId) {
     
     const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
     const userId = row[3] ? String(row[3]) : null;
-    const likeCount = row[4] ? Number(row[4]) : 0;
+    const username = row[4] ? String(row[4]) : null;
+    const likeCount = row[5] ? Number(row[5]) : 0;
     
     // 해당 게시물의 첫 번째 이미지 경로만 조회 (게시물당 이미지 하나만)
     const imageResult = await connection.execute(
@@ -120,6 +122,7 @@ async function getPostById(postId) {
       content: content,
       createdAt: createdAt,
       userId: userId,
+      username: username,
       likeCount: likeCount,
       imageDir: imageDir, // 단일 이미지 경로 (문자열)
     };
