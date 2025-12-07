@@ -391,9 +391,10 @@ async function getFollowingPosts(userId) {
   try {
     // 게시물 조회
     const result = await connection.execute(
-      `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID 
+      `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID, u.NAME 
        FROM POST p
        JOIN FOLLOW f ON p.USER_ID = f.FOLLOWING_ID 
+       LEFT JOIN USERS u ON p.USER_ID = u.USER_ID
        WHERE f.FOLLOWER_ID = :user_id 
        ORDER BY p.CREATED_AT DESC`,
       {
@@ -426,6 +427,7 @@ async function getFollowingPosts(userId) {
       
       const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
       const returnedUserId = row[3] ? String(row[3]) : null;
+      const username = row[4] ? String(row[4]) : null;
       
       // 해당 게시물의 첫 번째 이미지 경로만 조회 (게시물당 이미지 하나만)
       const imageResult = await connection.execute(
@@ -445,6 +447,7 @@ async function getFollowingPosts(userId) {
         content: content,
         createdAt: createdAt,
         userId: returnedUserId,
+        username: username,
         imageDir: imageDir, // 단일 이미지 경로 (문자열)
       });
     }
