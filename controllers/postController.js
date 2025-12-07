@@ -147,6 +147,7 @@ async function getPostsByUser(req, res) {
       username: post.username || null,
       commentCount: post.commentCount || 0,
       imageDir: post.imageDir || null, // 단일 이미지 경로 (문자열)
+      hashtags: post.hashtags || [], // 해시태그 배열
     }));
     
     res.status(200).json({ 
@@ -192,6 +193,7 @@ async function getRecommendedPostsByUser(req, res) {
       likeCount: post.likeCount,
       commentCount: post.commentCount || 0,
       imageDir: post.imageDir || null, // 단일 이미지 경로 (문자열)
+      hashtags: post.hashtags || [], // 해시태그 배열
     }));
     
     res.status(200).json({ 
@@ -236,6 +238,7 @@ async function getFollowingPostsByUser(req, res) {
       username: post.username || null,
       commentCount: post.commentCount || 0,
       imageDir: post.imageDir || null, // 단일 이미지 경로 (문자열)
+      hashtags: post.hashtags || [], // 해시태그 배열
     }));
     
     res.status(200).json({ 

@@ -282,6 +282,20 @@ async function getPostsByUserId(userId) {
         ? formatImageDir(imageResult.rows[0][0]) 
         : null;
       
+      // 해당 게시물의 해시태그 목록 조회
+      const hashtagResult = await connection.execute(
+        `SELECT Hashtag_id, Hashtag_name FROM HASHTAG WHERE Post_id = :post_id ORDER BY Hashtag_id`,
+        {
+          post_id: returnedPostId,
+        }
+      );
+      
+      // 해시태그 배열 생성
+      const hashtags = hashtagResult.rows.map(hashtagRow => ({
+        hashtagId: hashtagRow[0] ? Number(hashtagRow[0]) : null,
+        hashtagName: hashtagRow[1] ? String(hashtagRow[1]) : null,
+      }));
+      
       posts.push({
         postId: returnedPostId,
         content: content,
@@ -290,6 +304,7 @@ async function getPostsByUserId(userId) {
         username: username,
         commentCount: commentCount,
         imageDir: imageDir, // 단일 이미지 경로 (문자열)
+        hashtags: hashtags, // 해시태그 배열
       });
     }
     
@@ -384,6 +399,20 @@ async function getRecommendedPosts(userId) {
         ? formatImageDir(imageResult.rows[0][0]) 
         : null;
       
+      // 해당 게시물의 해시태그 목록 조회
+      const hashtagResult = await connection.execute(
+        `SELECT Hashtag_id, Hashtag_name FROM HASHTAG WHERE Post_id = :post_id ORDER BY Hashtag_id`,
+        {
+          post_id: returnedPostId,
+        }
+      );
+      
+      // 해시태그 배열 생성
+      const hashtags = hashtagResult.rows.map(hashtagRow => ({
+        hashtagId: hashtagRow[0] ? Number(hashtagRow[0]) : null,
+        hashtagName: hashtagRow[1] ? String(hashtagRow[1]) : null,
+      }));
+      
       posts.push({
         postId: returnedPostId,
         content: content,
@@ -393,6 +422,7 @@ async function getRecommendedPosts(userId) {
         likeCount: likeCount,
         commentCount: commentCount,
         imageDir: imageDir, // 단일 이미지 경로 (문자열)
+        hashtags: hashtags, // 해시태그 배열
       });
     }
     
@@ -467,6 +497,20 @@ async function getFollowingPosts(userId) {
         ? formatImageDir(imageResult.rows[0][0]) 
         : null;
       
+      // 해당 게시물의 해시태그 목록 조회
+      const hashtagResult = await connection.execute(
+        `SELECT Hashtag_id, Hashtag_name FROM HASHTAG WHERE Post_id = :post_id ORDER BY Hashtag_id`,
+        {
+          post_id: returnedPostId,
+        }
+      );
+      
+      // 해시태그 배열 생성
+      const hashtags = hashtagResult.rows.map(hashtagRow => ({
+        hashtagId: hashtagRow[0] ? Number(hashtagRow[0]) : null,
+        hashtagName: hashtagRow[1] ? String(hashtagRow[1]) : null,
+      }));
+      
       posts.push({
         postId: returnedPostId,
         content: content,
@@ -475,6 +519,7 @@ async function getFollowingPosts(userId) {
         username: username,
         commentCount: commentCount,
         imageDir: imageDir, // 단일 이미지 경로 (문자열)
+        hashtags: hashtags, // 해시태그 배열
       });
     }
     
