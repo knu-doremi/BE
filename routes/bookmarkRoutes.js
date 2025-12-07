@@ -43,7 +43,7 @@ router.post('/add', async (req, res) => {
     }
 });
 
-router.post('/remove', async (req, res) => {
+router.post('/delete', async (req, res) => {
     try {
         const { postId, userId } = req.body;
 
@@ -54,15 +54,15 @@ router.post('/remove', async (req, res) => {
             });
         }
 
-        const success = await bookmarkModel.removeBookmark(postId, userId);
+        const success = await bookmarkModel.deleteBookmark(postId, userId);
 
         res.status(200).json({
             result: success,
-            message: success ? "Bookmark removed" : "Failed to remove bookmark"
+            message: success ? "Bookmark deleted" : "Failed to delete bookmark"
         });
 
     } catch (error) {
-        console.error("REMOVE BOOKMARK API ERROR:", error);
+        console.error("DELETE BOOKMARK API ERROR:", error);
         res.status(500).json({ result: false, message: 'Internal server error' });
     }
 });
