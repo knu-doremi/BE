@@ -102,6 +102,7 @@ async function getPost(req, res) {
       username: post.username || null,
       likeCount: post.likeCount || 0,
       imageDir: post.imageDir || null, // 단일 이미지 경로 (문자열)
+      hashtags: post.hashtags || [], // 해시태그 배열
     };
     
     res.status(200).json({ 
