@@ -144,6 +144,7 @@ async function getPostsByUser(req, res) {
       createdAt: post.createdAt,
       userId: post.userId,
       username: post.username || null,
+      commentCount: post.commentCount || 0,
       imageDir: post.imageDir || null, // 단일 이미지 경로 (문자열)
     }));
     
@@ -188,6 +189,7 @@ async function getRecommendedPostsByUser(req, res) {
       userId: post.userId,
       username: post.username || null,
       likeCount: post.likeCount,
+      commentCount: post.commentCount || 0,
       imageDir: post.imageDir || null, // 단일 이미지 경로 (문자열)
     }));
     
@@ -231,6 +233,7 @@ async function getFollowingPostsByUser(req, res) {
       createdAt: post.createdAt,
       userId: post.userId,
       username: post.username || null,
+      commentCount: post.commentCount || 0,
       imageDir: post.imageDir || null, // 단일 이미지 경로 (문자열)
     }));
     

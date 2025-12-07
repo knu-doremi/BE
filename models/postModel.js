@@ -216,7 +216,8 @@ async function getPostsByUserId(userId) {
   try {
     // 게시물 조회
     const result = await connection.execute(
-      `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID, u.NAME 
+      `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID, u.NAME,
+              (SELECT COUNT(*) FROM COMMENTS c WHERE c.POST_ID = p.POST_ID) as CommentCount
        FROM POST p, USERS u 
        WHERE p.USER_ID = u.USER_ID AND p.USER_ID = :user_id 
        ORDER BY p.CREATED_AT DESC`,
@@ -251,6 +252,7 @@ async function getPostsByUserId(userId) {
       const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
       const returnedUserId = row[3] ? String(row[3]) : null;
       const username = row[4] ? String(row[4]) : null;
+      const commentCount = row[5] ? Number(row[5]) : 0;
       
       // 해당 게시물의 첫 번째 이미지 경로만 조회 (게시물당 이미지 하나만)
       const imageResult = await connection.execute(
@@ -271,6 +273,7 @@ async function getPostsByUserId(userId) {
         createdAt: createdAt,
         userId: returnedUserId,
         username: username,
+        commentCount: commentCount,
         imageDir: imageDir, // 단일 이미지 경로 (문자열)
       });
     }
@@ -310,7 +313,8 @@ async function getRecommendedPosts(userId) {
         GROUP BY p.Post_id
       )
       SELECT p.Post_id, p.Content, p.Created_at, p.User_id, u.Name,
-             (SELECT COUNT(*) FROM LIKES l WHERE l.Post_id = p.Post_id) as LikeCount
+             (SELECT COUNT(*) FROM LIKES l WHERE l.Post_id = p.Post_id) as LikeCount,
+             (SELECT COUNT(*) FROM COMMENTS c WHERE c.POST_ID = p.Post_id) as CommentCount
       FROM POST p
       LEFT JOIN USERS u ON p.User_id = u.User_id
       JOIN PostScores ps ON p.Post_id = ps.Post_id
@@ -350,6 +354,7 @@ async function getRecommendedPosts(userId) {
       const returnedUserId = row[3] ? String(row[3]) : null;
       const username = row[4] ? String(row[4]) : null;
       const likeCount = row[5] ? Number(row[5]) : 0;
+      const commentCount = row[6] ? Number(row[6]) : 0;
       
       // 해당 게시물의 첫 번째 이미지 경로만 조회 (게시물당 이미지 하나만)
       const imageResult = await connection.execute(
@@ -371,6 +376,7 @@ async function getRecommendedPosts(userId) {
         userId: returnedUserId,
         username: username,
         likeCount: likeCount,
+        commentCount: commentCount,
         imageDir: imageDir, // 단일 이미지 경로 (문자열)
       });
     }
@@ -393,7 +399,8 @@ async function getFollowingPosts(userId) {
   try {
     // 게시물 조회
     const result = await connection.execute(
-      `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID, u.NAME 
+      `SELECT p.POST_ID, p.CONTENT, p.CREATED_AT, p.USER_ID, u.NAME,
+              (SELECT COUNT(*) FROM COMMENTS c WHERE c.POST_ID = p.POST_ID) as CommentCount
        FROM POST p
        JOIN FOLLOW f ON p.USER_ID = f.FOLLOWING_ID 
        LEFT JOIN USERS u ON p.USER_ID = u.USER_ID
@@ -430,6 +437,7 @@ async function getFollowingPosts(userId) {
       const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
       const returnedUserId = row[3] ? String(row[3]) : null;
       const username = row[4] ? String(row[4]) : null;
+      const commentCount = row[5] ? Number(row[5]) : 0;
       
       // 해당 게시물의 첫 번째 이미지 경로만 조회 (게시물당 이미지 하나만)
       const imageResult = await connection.execute(
@@ -450,6 +458,7 @@ async function getFollowingPosts(userId) {
         createdAt: createdAt,
         userId: returnedUserId,
         username: username,
+        commentCount: commentCount,
         imageDir: imageDir, // 단일 이미지 경로 (문자열)
       });
     }
