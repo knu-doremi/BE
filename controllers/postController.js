@@ -143,6 +143,7 @@ async function getPostsByUser(req, res) {
       content: post.content,
       createdAt: post.createdAt,
       userId: post.userId,
+      username: post.username || null,
       imageDir: post.imageDir || null, // 단일 이미지 경로 (문자열)
     }));
     
