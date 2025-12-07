@@ -80,6 +80,14 @@ module.exports = {
     },
 
     findBookmarkedPosts: async (userId) => {
+
+        // 이미지 경로 포맷팅 함수 내부에 삽입
+        function formatImageDir(imageDir) {
+            if (!imageDir) return null;
+            const dir = String(imageDir);
+            return dir.startsWith('/uploads/') ? dir : `/uploads/${dir}`;
+        }
+
         const sql = `
             SELECT 
                 p.Post_id,
@@ -87,7 +95,7 @@ module.exports = {
                 p.Created_at,
                 p.User_id,
                 (SELECT COUNT(*) FROM LIKES l WHERE l.Post_id = p.Post_id) AS LikeCount,
-                p.RepImage
+                p.RepImage AS RepImage
             FROM POST p
             JOIN BOOKMARK b ON p.Post_id = b.Post_id
             WHERE b.User_id = :userId
@@ -98,34 +106,24 @@ module.exports = {
         const conn = await pool.getConnection();
 
         try {
-            const result = await conn.execute(sql, { userId }, { outFormat: 4002 });
+            const result = await conn.execute(
+                sql,
+                { userId },
+                { outFormat: 4002 } // OBJECT
+            );
 
-            const posts = result.rows.map(row => {
-                let repImage = row.REPIMAGE;
-
-                // null이면 그대로 null
-                if (repImage) {
-                    repImage = String(repImage);
-                    // /uploads/ 로 통일
-                    repImage = repImage.startsWith('/uploads/')
-                        ? repImage
-                        : `/uploads/${repImage}`;
-                }
-
-                return {
-                    postId: row.POST_ID,
-                    content: row.CONTENT,
-                    createdAt: row.CREATED_AT,
-                    userId: row.USER_ID,
-                    likeCount: row.LIKECOUNT,
-                    repImage: repImage
-                };
-            });
-
-            return posts;
+            return result.rows.map(row => ({
+                postId: row.POST_ID,
+                content: row.CONTENT,
+                createdAt: row.CREATED_AT,
+                userId: row.USER_ID,
+                likeCount: row.LIKECOUNT,
+                // 여기서 포맷팅
+                repImage: formatImageDir(row.REPIMAGE)
+            }));
 
         } finally {
             await conn.close();
         }
     }
-}
+};
