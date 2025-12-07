@@ -3,6 +3,24 @@ const router = Router();
 const bookmarkModel = require ("../models/bookmarkModel.js");
 console.log("📌 bookmarkRoutes loaded");
 
+router.get('', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const posts = await bookmarkModel.findBookmarkedPosts(userId);
+
+        res.status(200).json({
+            result: true,
+            count: posts.length,
+            posts: posts
+        });
+
+    } catch (error) {
+        console.error("LIST BOOKMARKS API ERROR:", error);
+        res.status(500).json({ result: false, message: 'Internal server error' });
+    }
+});
+
 router.post('/check', async (req, res) => {
     try {
         const { postId, userId } = req.body;
