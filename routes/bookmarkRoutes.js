@@ -19,4 +19,29 @@ router.post('/check', async (req, res) => {
     }
 });
 
+router.post('/add', async (req, res) => {
+    try {
+        const { postId, userId } = req.body;
+
+        if (!postId || !userId) {
+            return res.status(400).json({
+                result: false,
+                message: "postId and userId are required"
+            });
+        }
+
+        const success = await bookmarkModel.addBookmark(postId, userId);
+
+        res.status(200).json({
+            result: success,
+            message: success ? "Bookmark added" : "Failed to add bookmark"
+        });
+
+    } catch (error) {
+        console.error("ADD BOOKMARK API ERROR:", error);
+        res.status(500).json({ result: false, message: 'Internal server error' });
+    }
+});
+
+
 module.exports = router;
