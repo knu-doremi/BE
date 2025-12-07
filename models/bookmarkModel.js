@@ -99,9 +99,11 @@ module.exports = {
                 p.Content,
                 p.Created_at,
                 p.User_id,
+                u.Name,
                 (SELECT COUNT(*) FROM LIKES l WHERE l.Post_id = p.Post_id) AS LikeCount
             FROM POST p
             JOIN BOOKMARK b ON p.Post_id = b.Post_id
+            LEFT JOIN USERS u ON p.User_id = u.User_id
             WHERE b.User_id = :userId
             ORDER BY b.Bookmark_id DESC
         `;
@@ -139,7 +141,8 @@ module.exports = {
                 
                 const createdAt = row[2] ? (row[2] instanceof Date ? row[2].toISOString() : String(row[2])) : null;
                 const userId = row[3] ? String(row[3]) : null;
-                const likeCount = row[4] ? Number(row[4]) : 0;
+                const username = row[4] ? String(row[4]) : null;
+                const likeCount = row[5] ? Number(row[5]) : 0;
                 
                 // 해당 게시물의 첫 번째 이미지 경로만 조회 (게시물당 이미지 하나만)
                 const imageResult = await conn.execute(
@@ -157,6 +160,7 @@ module.exports = {
                     content: content,
                     createdAt: createdAt,
                     userId: userId,
+                    username: username,
                     likeCount: likeCount,
                     imageDir: imageDir
                 });
