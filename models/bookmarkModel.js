@@ -87,7 +87,7 @@ module.exports = {
                 p.Created_at,
                 p.User_id,
                 (SELECT COUNT(*) FROM LIKES l WHERE l.Post_id = p.Post_id) AS LikeCount,
-                NULL AS RepImage
+                p.RepImage
             FROM POST p
             JOIN BOOKMARK b ON p.Post_id = b.Post_id
             WHERE b.User_id = :userId
@@ -98,23 +98,31 @@ module.exports = {
         const conn = await pool.getConnection();
 
         try {
-            const result = await conn.execute(
-                sql,
-                { userId },
-                { outFormat: 4002 }
-            );
+            const result = await conn.execute(sql, { userId }, { outFormat: 4002 });
 
-            // 안전한 매핑
-            const posts = result.rows.map(row => ({
-                postId: row.POST_ID,
-                content: row.Content,
-                createdAt: row.CREATED_AT,
-                userId: row.USER_ID,
-                repImage: row.REPIMAGE,
-                likeCount: row.LIKECOUNT
-            }));
+            const posts = result.rows.map(row => {
+                let repImage = row.REPIMAGE;
 
-            return posts;   // ← 이 값만 JSON으로 반환됨 (circle 없음)
+                // null이면 그대로 null
+                if (repImage) {
+                    repImage = String(repImage);
+                    // /uploads/ 로 통일
+                    repImage = repImage.startsWith('/uploads/')
+                        ? repImage
+                        : `/uploads/${repImage}`;
+                }
+
+                return {
+                    postId: row.POST_ID,
+                    content: row.CONTENT,
+                    createdAt: row.CREATED_AT,
+                    userId: row.USER_ID,
+                    likeCount: row.LIKECOUNT,
+                    repImage: repImage
+                };
+            });
+
+            return posts;
 
         } finally {
             await conn.close();
