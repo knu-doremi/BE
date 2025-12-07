@@ -38,6 +38,7 @@ async function searchPostsByHashtag(req, res) {
             content: post.content,
             createdAt: post.createdAt,
             userId: post.userId,
+            username: post.username || null,
             likeCount: post.likeCount || 0,
             imageDir: post.imageDir || null,
           });
