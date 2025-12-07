@@ -1,8 +1,9 @@
 const {Router} = require ("express");
 const router = Router();
 const bookmarkModel = require ("../models/bookmarkModel.js");
+console.log("📌 bookmarkRoutes loaded");
 
-router.post('/bookmark/check', async (req, res) => {
+router.post('/check', async (req, res) => {
     try {
         const { postId, userId } = req.body;
 
@@ -17,3 +18,5 @@ router.post('/bookmark/check', async (req, res) => {
         res.status(500).json({ result: false, message: 'Internal server error' });
     }
 });
+
+module.exports = router;
