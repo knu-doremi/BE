@@ -43,5 +43,28 @@ router.post('/add', async (req, res) => {
     }
 });
 
+router.post('/remove', async (req, res) => {
+    try {
+        const { postId, userId } = req.body;
+
+        if (!postId || !userId) {
+            return res.status(400).json({
+                result: false,
+                message: "postId and userId are required"
+            });
+        }
+
+        const success = await bookmarkModel.removeBookmark(postId, userId);
+
+        res.status(200).json({
+            result: success,
+            message: success ? "Bookmark removed" : "Failed to remove bookmark"
+        });
+
+    } catch (error) {
+        console.error("REMOVE BOOKMARK API ERROR:", error);
+        res.status(500).json({ result: false, message: 'Internal server error' });
+    }
+});
 
 module.exports = router;
