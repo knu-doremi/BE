@@ -50,10 +50,11 @@ async function getCommentsByPostId(POST_ID) {
   
   try {
     const result = await connection.execute(
-      `SELECT COMMENT_ID, PARENT_COMMENT_ID, CREATED_AT, POST_ID, USER_ID, TEXT
-       FROM COMMENTS 
-       WHERE POST_ID = :post_id
-       ORDER BY CREATED_AT ASC`,
+      `SELECT c.COMMENT_ID, c.PARENT_COMMENT_ID, c.CREATED_AT, c.POST_ID, c.USER_ID, c.TEXT, u.NAME
+       FROM COMMENTS c
+       LEFT JOIN USERS u ON c.USER_ID = u.USER_ID
+       WHERE c.POST_ID = :post_id
+       ORDER BY c.CREATED_AT ASC`,
       {
         post_id: { val: POST_ID, type: oracledb.NUMBER },
       }
@@ -66,6 +67,7 @@ async function getCommentsByPostId(POST_ID) {
       POST_ID: row[3],
       USER_ID: row[4],
       TEXT: row[5],
+      username: row[6] ? String(row[6]) : null,
     }));
   } finally {
     await connection.close();
@@ -83,10 +85,11 @@ async function getRepliesByParentId(PARENT_COMMENT_ID) {
   
   try {
     const result = await connection.execute(
-      `SELECT COMMENT_ID, PARENT_COMMENT_ID, CREATED_AT, POST_ID, USER_ID, TEXT
-       FROM COMMENTS 
-       WHERE PARENT_COMMENT_ID = :parent_comment_id
-       ORDER BY CREATED_AT ASC`,
+      `SELECT c.COMMENT_ID, c.PARENT_COMMENT_ID, c.CREATED_AT, c.POST_ID, c.USER_ID, c.TEXT, u.NAME
+       FROM COMMENTS c
+       LEFT JOIN USERS u ON c.USER_ID = u.USER_ID
+       WHERE c.PARENT_COMMENT_ID = :parent_comment_id
+       ORDER BY c.CREATED_AT ASC`,
       {
         parent_comment_id: { val: PARENT_COMMENT_ID, type: oracledb.NUMBER },
       }
@@ -99,6 +102,7 @@ async function getRepliesByParentId(PARENT_COMMENT_ID) {
       POST_ID: row[3],
       USER_ID: row[4],
       TEXT: row[5],
+      username: row[6] ? String(row[6]) : null,
     }));
   } finally {
     await connection.close();
