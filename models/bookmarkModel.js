@@ -52,5 +52,31 @@ module.exports = {
         } finally {
             await conn.close();
         }
+    },
+
+    deleteBookmark: async (postId, userId) => {
+        const sql = `
+            DELETE FROM BOOKMARK
+            WHERE Post_id = :postId
+            AND User_id = :userId
+        `;
+
+        const pool = getPool();
+        const conn = await pool.getConnection();
+
+        try {
+            const result = await conn.execute(
+                sql,
+                { postId, userId },
+                { autoCommit: true }
+            );
+
+            // 삭제된 row 개수로 성공 여부 판단
+            return result.rowsAffected > 0;
+
+        } finally {
+            await conn.close();
+        }
     }
+
 }
