@@ -35,6 +35,140 @@ async function checkLike(POST_ID, USER_ID) {
   }
 }
 
+/**
+ * 좋아요 추가
+ * @param {number} POST_ID - 게시물 ID
+ * @param {string} USER_ID - 사용자 ID
+ * @returns {Promise<boolean>} 추가 성공 여부
+ */
+async function addLike(POST_ID, USER_ID) {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  
+  try {
+    // 이미 좋아요가 있는지 확인
+    const isLiked = await checkLike(POST_ID, USER_ID);
+    if (isLiked) {
+      return false; // 이미 좋아요가 있으면 추가하지 않음
+    }
+    
+    const result = await connection.execute(
+      `INSERT INTO LIKES (POST_ID, USER_ID) 
+       VALUES (:post_id, :user_id)`,
+      {
+        post_id: { val: POST_ID, type: oracledb.NUMBER },
+        user_id: USER_ID,
+      },
+      { autoCommit: true }
+    );
+    
+    return result.rowsAffected > 0;
+  } catch (error) {
+    console.error('좋아요 추가 오류:', error);
+    throw error;
+  } finally {
+    await connection.close();
+  }
+}
+
+/**
+ * 좋아요 취소
+ * @param {number} POST_ID - 게시물 ID
+ * @param {string} USER_ID - 사용자 ID
+ * @returns {Promise<boolean>} 취소 성공 여부
+ */
+async function deleteLike(POST_ID, USER_ID) {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  
+  try {
+    const result = await connection.execute(
+      `DELETE FROM LIKES 
+       WHERE POST_ID = :post_id AND USER_ID = :user_id`,
+      {
+        post_id: { val: POST_ID, type: oracledb.NUMBER },
+        user_id: USER_ID,
+      },
+      { autoCommit: true }
+    );
+    
+    return result.rowsAffected > 0;
+  } catch (error) {
+    console.error('좋아요 취소 오류:', error);
+    throw error;
+  } finally {
+    await connection.close();
+  }
+}
+
+/**
+ * 좋아요 토글 (있으면 삭제, 없으면 추가)
+ * @param {number} POST_ID - 게시물 ID
+ * @param {string} USER_ID - 사용자 ID
+ * @returns {Promise<boolean>} 토글 후 좋아요 상태 (true: 좋아요됨, false: 좋아요 취소됨)
+ */
+async function toggleLike(POST_ID, USER_ID) {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  
+  try {
+    // 1. 좋아요 존재 여부 확인 (autoCommit: false로 트랜잭션 시작)
+    const checkResult = await connection.execute(
+      `SELECT 1 
+       FROM LIKES 
+       WHERE POST_ID = :post_id AND USER_ID = :user_id`,
+      {
+        post_id: { val: POST_ID, type: oracledb.NUMBER },
+        user_id: USER_ID,
+      },
+      { autoCommit: false }
+    );
+    
+    let isLiked = false;
+    
+    if (checkResult.rows.length > 0) {
+      // 2. 이미 존재하면 삭제 (좋아요 취소)
+      await connection.execute(
+        `DELETE FROM LIKES 
+         WHERE POST_ID = :post_id AND USER_ID = :user_id`,
+        {
+          post_id: { val: POST_ID, type: oracledb.NUMBER },
+          user_id: USER_ID,
+        },
+        { autoCommit: false }
+      );
+      isLiked = false;
+    } else {
+      // 3. 없으면 추가 (좋아요)
+      await connection.execute(
+        `INSERT INTO LIKES (POST_ID, USER_ID) 
+         VALUES (:post_id, :user_id)`,
+        {
+          post_id: { val: POST_ID, type: oracledb.NUMBER },
+          user_id: USER_ID,
+        },
+        { autoCommit: false }
+      );
+      isLiked = true;
+    }
+    
+    // 트랜잭션 커밋
+    await connection.commit();
+    
+    return isLiked;
+  } catch (error) {
+    // 트랜잭션 롤백
+    await connection.rollback();
+    console.error('좋아요 토글 오류:', error);
+    throw error;
+  } finally {
+    await connection.close();
+  }
+}
+
 module.exports = {
   checkLike,
+  addLike,
+  deleteLike,
+  toggleLike,
 };
