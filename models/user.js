@@ -110,5 +110,27 @@ module.exports = {
         } finally {
             await conn.close();
         }
+    },
+    
+    update: async (userid, password, name) => {
+        const sql = `
+            UPDATE USERS
+            SET Password = :password, Name = :name
+            WHERE User_id = :userid
+        `;
+
+        const pool = getPool();
+        const conn = await pool.getConnection();
+
+        try {
+            const result = await conn.execute(
+                sql,
+                { userid, password, name },
+                { autoCommit: true }
+            );
+            return result.rowsAffected > 0;
+        } finally {
+            await conn.close();
+        }
     }
-}
+};
