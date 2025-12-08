@@ -132,5 +132,53 @@ module.exports = {
         } finally {
             await conn.close();
         }
+    },
+
+    // 추천 유저 조회 (가중치 기반 알고리즘 적용)
+    getRecommendedUsers: async (userId) => {
+        const sql = `
+            WITH UserPrefs AS (
+                SELECT l.Label_name, COUNT(*) as Weight
+                FROM LIKES k
+                JOIN IMAGE i ON k.Post_id = i.Post_id
+                JOIN LABEL l ON i.Image_dir = l.Image_dir
+                WHERE k.User_id = :user_id
+                GROUP BY l.Label_name
+            ),
+            UserScores AS (
+                SELECT p.User_id, SUM(up.Weight) as TotalScore
+                FROM POST p
+                JOIN IMAGE i ON p.Post_id = i.Post_id
+                JOIN LABEL l ON i.Image_dir = l.Image_dir
+                JOIN UserPrefs up ON l.Label_name = up.Label_name
+                WHERE p.User_id != :user_id
+                GROUP BY p.User_id
+            )
+            SELECT u.User_id, u.Name, us.TotalScore
+            FROM USERS u
+            JOIN UserScores us ON u.User_id = us.User_id
+            ORDER BY us.TotalScore DESC
+            FETCH FIRST 5 ROWS ONLY
+        `;
+
+        const pool = getPool();
+        const conn = await pool.getConnection();
+
+        try {
+            const result = await conn.execute(sql, { user_id: userId });
+
+            const users = result.rows.map(row => ({
+                userId: row[0] ? String(row[0]) : null,
+                name: row[1] ? String(row[1]) : null,
+                score: row[2] ? Number(row[2]) : 0
+            }));
+
+            return users;
+        } catch (error) {
+            console.error("GET RECOMMENDED USERS ERROR:", error);
+            throw error;
+        } finally {
+            await conn.close();
+        }
     }
 };
