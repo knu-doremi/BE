@@ -31,4 +31,23 @@ router.post('', async (req, res) => {
     }
 });
 
+// 2) 팔로우 상태 확인 -> post
+router.post('/state', async (req, res) => {
+    try {
+        const { followerId, followingId } = req.body; 
+        const isFollowing = await followmodel.isFollow(followerId, followingId);
+
+        res.status(200).json({
+            result: true,
+            following: isFollowing
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            result: false,
+            message: 'Internal server error'
+        });
+    }
+});
+
 module.exports = router;
