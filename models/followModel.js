@@ -43,5 +43,30 @@ module.exports = {
         } finally {
             await conn.close();
         }
+    },
+
+    unfollow: async (me, target) => {
+        const deleteSql = `
+            DELETE FROM FOLLOW
+            WHERE Follower_id = :me
+              AND Following_id = :target
+        `;
+
+        const pool = getPool();
+        const conn = await pool.getConnection();
+
+        try {
+            await conn.execute(
+                deleteSql,
+                { me, target },
+                { autoCommit: true }
+            );
+            return true;   // 성공 시 true 리턴
+        } catch (err) {
+            console.error(err);
+            throw err;
+        } finally {
+            await conn.close();
+        }
     }
 };
