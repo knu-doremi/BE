@@ -73,6 +73,21 @@ router.get('/checkid', async (req, res) => {
     }
 });
 
+// 5) /update -> POST
+router.post('/update', async (req, res) => {
+    try {
+        const {userid, password, name} = req.body;
 
+        const result = await usermodel.update(userid, password, name);
+
+        if (!result) {
+            return res.status(400).json({ result: false, message: 'Update failed' });
+        }
+
+        res.status(200).json({result: true, message: 'User updated successfully'});
+    } catch (error) {
+        res.status(500).json({ result: false, message: 'Internal server error' });
+    }
+});
 
 module.exports = router;
