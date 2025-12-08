@@ -50,4 +50,25 @@ router.post('/state', async (req, res) => {
     }
 });
 
+// 3) 팔로잉, 팔로워 수 반환 -> post
+router.post('/counts', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const followingCount = await followmodel.countFollowing(userId);
+        const followerCount = await followmodel.countFollowers(userId);
+        res.status(200).json({
+            result: true,
+            followingCount: followingCount,
+            followerCount: followerCount
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            result: false,
+            message: 'Internal server error'
+        });
+    }
+});
+
+
 module.exports = router;
