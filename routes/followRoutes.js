@@ -2,23 +2,32 @@ const {Router} = require('express');
 const router = Router();
 const followmodel = require('../models/followModel');
 
-// 1) /follow -> POST (팔로우 여부에 따라, 추가 및 삭제)
+// 1) 팔로우 -> post
 router.post('', async (req, res) => {
     try {
-        const {followerId, followingId} = req.body;
-        const result = await followmodel.isFollow(followerId, followingId);
+        const { followerId, followingId } = req.body;
 
-        if (result) {
-            console.log(result);
-            console.log('Unfollow logic here');
+        // 현재 팔로우 여부 확인
+        const isFollowing = await followmodel.isFollow(followerId, followingId);
+
+        if (isFollowing) {
+            await followmodel.unfollow(followerId, followingId);
         } else {
-            console.log(result);
-            console.log('Follow logic here');
-            // 팔로우 추가
+            await followmodel.follow(followerId, followingId);
         }
-        res.status(200).json({ result: true, following: result});
+
+        // 결과 반환: 현재 상태를 클라이언트에게 알려줌
+        res.status(200).json({
+            result: true,
+            following: !isFollowing     // 언팔했으면 false, 팔로우했으면 true
+        });
+
     } catch (error) {
-        res.status(500).json({ result: false, message: 'Internal server error' });
+        console.error(error);
+        res.status(500).json({
+            result: false,
+            message: 'Internal server error'
+        });
     }
 });
 
