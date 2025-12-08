@@ -68,5 +68,30 @@ module.exports = {
         } finally {
             await conn.close();
         }
+    },
+
+    // userId의 팔로우 수 카운트
+    countFollowers: async (userId) => {
+        const sql = `
+            SELECT COUNT(*) AS cnt
+            FROM FOLLOW
+            WHERE FOLLOWING_ID = :userId
+        `;
+
+        const pool = getPool();
+        const conn = await pool.getConnection();
+
+        try {
+            const result = await conn.execute(sql, { userId });
+
+            const count = result.rows[0][0];
+
+            return count; // 숫자 반환
+        } catch (err) {
+            console.error(err);
+            throw err;
+        } finally {
+            await conn.close();
+        }
     }
 };
