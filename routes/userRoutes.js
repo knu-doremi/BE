@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
     res.json({message: "User route works!"});
 });*/
 
-// 1) /api/login -> POST
+// 1) /login -> POST
 router.post('/login', async (req, res) => {
     try {
         const {userid, password} = req.body;
@@ -22,7 +22,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// 2) /api/register -> POST
+// 2) /register -> POST
 router.post('/register', async (req, res) => {
     try {
         const {userid, password, name, sex, birthdate} = req.body;
@@ -39,8 +39,10 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// 3) /api/searchpassword -> POST
-router.post('/searchpassword', async (req, res) => {
+// 3) /searchpassword -> POST
+router.post('/searchpassword',
+    
+     async (req, res) => {
     try {
         const {username, userid, sex, birthdate} = req.body;
 
@@ -56,7 +58,7 @@ router.post('/searchpassword', async (req, res) => {
     }
 });
 
-// 4) /api/checkid -> GET
+// 4) /checkid -> GET
 router.get('/checkid', async (req, res) => {
     try {
         const { userid } = req.query;
@@ -71,6 +73,21 @@ router.get('/checkid', async (req, res) => {
     }
 });
 
+// 5) /update -> POST
+router.post('/update', async (req, res) => {
+    try {
+        const {userid, password, name} = req.body;
 
+        const result = await usermodel.update(userid, password, name);
+
+        if (!result) {
+            return res.status(400).json({ result: false, message: 'Update failed' });
+        }
+
+        res.status(200).json({result: true, message: 'User updated successfully'});
+    } catch (error) {
+        res.status(500).json({ result: false, message: 'Internal server error' });
+    }
+});
 
 module.exports = router;
