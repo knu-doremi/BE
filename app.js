@@ -15,12 +15,20 @@ const likeRoutes = require('./routes/likeRoutes');
 const app = express();
 
 // CORS 설정 - 프론트엔드에서 외부 백엔드 서버 접근 허용
-app.use(cors({
-  origin: '*', // 모든 origin 허용 (프로덕션에서는 특정 origin만 허용 권장)
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: false // 쿠키 사용 시 true로 변경
-}));
+app.use(
+  cors({
+    origin: [
+      "https://doremi-eight.vercel.app", // 프로덕션 프론트엔드
+      "http://localhost:3000", // 로컬 개발 환경
+      "http://localhost:3001", // 로컬 개발 환경 (다른 포트)
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:3001",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    credentials: true, // 쿠키 사용 시 true로 변경
+  })
+);
 
 // 미들웨어 설정
 app.use(express.json());
