@@ -1,7 +1,6 @@
 const {Router} = require ("express");
 const router = Router();
 const bookmarkModel = require ("../models/bookmarkModel.js");
-console.log("📌 bookmarkRoutes loaded");
 
 router.post('/list', async (req, res) => {
     try {
