@@ -166,9 +166,43 @@ async function toggleLike(POST_ID, USER_ID) {
   }
 }
 
+/**
+ * 유저가 받은 총 좋아요 수 조회
+ * @param {string} USER_ID - 사용자 ID
+ * @returns {Promise<number>} 총 좋아요 수
+ */
+async function countReceivedLikes(USER_ID) {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  
+  try {
+    const result = await connection.execute(
+      `SELECT COUNT(l.POST_ID) AS TotalLikes 
+       FROM POST p
+       JOIN LIKES l ON p.POST_ID = l.POST_ID
+       WHERE p.USER_ID = :user_id`,
+      {
+        user_id: USER_ID,
+      }
+    );
+    
+    const totalLikes = result.rows.length > 0 && result.rows[0][0] !== null 
+      ? Number(result.rows[0][0]) 
+      : 0;
+    
+    return totalLikes;
+  } catch (error) {
+    console.error('좋아요 집계 오류:', error);
+    throw error;
+  } finally {
+    await connection.close();
+  }
+}
+
 module.exports = {
   checkLike,
   addLike,
   deleteLike,
   toggleLike,
+  countReceivedLikes,
 };

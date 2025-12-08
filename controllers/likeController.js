@@ -243,9 +243,42 @@ async function toggleLike(req, res) {
   }
 }
 
+/**
+ * 유저가 받은 총 좋아요 수 조회
+ */
+async function countReceivedLikes(req, res) {
+  try {
+    // USER_ID 등 다양한 형식 지원
+    const USER_ID = req.params.USER_ID || req.params.User_id || req.params.userId || req.params.user_id;
+    
+    if (!USER_ID) {
+      return res.status(400).json({ 
+        result: false, 
+        error: 'USER_ID가 필요합니다.' 
+      });
+    }
+    
+    // 총 좋아요 수 조회
+    const totalLikes = await likeModel.countReceivedLikes(USER_ID);
+    
+    res.status(200).json({ 
+      result: true,
+      userId: USER_ID,
+      totalLikes: totalLikes
+    });
+  } catch (error) {
+    console.error('좋아요 집계 오류:', error);
+    res.status(500).json({ 
+      result: false, 
+      error: error.message || '좋아요 집계 중 오류가 발생했습니다.' 
+    });
+  }
+}
+
 module.exports = {
   checkLike,
   addLike,
   deleteLike,
   toggleLike,
+  countReceivedLikes,
 };
