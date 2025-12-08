@@ -9,6 +9,7 @@ const commentRoutes = require('./routes/commentRoutes');
 const postRoutes = require('./routes/postRoutes');
 const hashtagRoutes = require('./routes/hashtagRoutes');
 const bookmarkRoutes = require('./routes/bookmarkRoutes');
+const likeRoutes = require('./routes/likeRoutes');
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/hashtags', hashtagRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
+app.use('/api/likes', likeRoutes);
 
 // 서버 시작
 const PORT = process.env.PORT || 3000;
