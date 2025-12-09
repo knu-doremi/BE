@@ -134,7 +134,7 @@ module.exports = {
         }
     },
 
-    // 추천 유저 조회 (가중치 기반 알고리즘 적용)
+    // 추천 유저 조회 (가중치 기반 알고리즘 적용, 팔로우하지 않은 유저만)
     getRecommendedUsers: async (userId) => {
         const sql = `
             WITH UserPrefs AS (
@@ -157,6 +157,12 @@ module.exports = {
             SELECT u.User_id, u.Name, us.TotalScore
             FROM USERS u
             JOIN UserScores us ON u.User_id = us.User_id
+            WHERE NOT EXISTS (
+                SELECT 1 
+                FROM FOLLOW f 
+                WHERE f.FOLLOWER_ID = :user_id 
+                  AND f.FOLLOWING_ID = u.User_id
+            )
             ORDER BY us.TotalScore DESC
             FETCH FIRST 5 ROWS ONLY
         `;
