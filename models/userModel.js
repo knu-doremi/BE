@@ -132,5 +132,35 @@ module.exports = {
         } finally {
             await conn.close();
         }
+    },
+
+    searchuser: async (keyword) => {
+        const sql = `
+            SELECT User_id, Password, Name, Sex,
+                   TO_CHAR(Birth_date, 'YYYYMMDD') AS BirthStr
+            FROM USERS
+            WHERE User_id LIKE '%' || :keyword || '%'
+        `;
+
+        const pool = getPool();
+        const conn = await pool.getConnection();
+
+        try {
+            const result = await conn.execute(sql, { keyword });
+
+            // result.rows = [[userId, password, name, sex, birthStr], ...]
+            const users = result.rows.map(row => ({
+                userId: row[0],
+                password: row[1],
+                name: row[2],
+                sex: row[3],
+                birth: row[4],
+                extra: null
+            }));
+
+            return users;
+        } finally {
+            await conn.close();
+        }
     }
 };
