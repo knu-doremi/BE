@@ -90,6 +90,34 @@ router.post('/update', async (req, res) => {
     }
 });
 
+// 6) /recommended/:user_id -> GET (추천 유저 조회)
+router.get('/recommended/:user_id', async (req, res) => {
+    try {
+        const USER_ID = req.params.user_id || req.params.USER_ID || req.params.User_id;
+        
+        if (!USER_ID) {
+            return res.status(400).json({ 
+                result: false, 
+                error: 'USER_ID가 필요합니다.' 
+            });
+        }
+
+        const users = await usermodel.getRecommendedUsers(USER_ID);
+
+        res.status(200).json({
+            result: true,
+            users: users,
+            count: users.length
+        });
+    } catch (error) {
+        console.error('추천 유저 조회 오류:', error);
+        res.status(500).json({ 
+            result: false, 
+            error: error.message || '추천 유저 조회 중 오류가 발생했습니다.' 
+        });
+    }
+});
+
 // 6) /searchuser -> POST
 router.post('/searchuser', async (req, res) => {
     try {
