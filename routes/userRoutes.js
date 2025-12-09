@@ -90,4 +90,15 @@ router.post('/update', async (req, res) => {
     }
 });
 
+// 6) /searchuser -> POST
+router.post('/searchuser', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const users = await usermodel.searchuser(userId);
+        res.status(200).json({ result: true, users: users });
+    } catch (error) {
+        res.status(500).json({ result: false, message: 'Internal server error' });
+    }
+});
+
 module.exports = router;
