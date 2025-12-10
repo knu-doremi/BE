@@ -30,60 +30,66 @@ module.exports = {
     },
 
     addBookmark: async (postId, userId) => {
-        // 1. 시퀀스(BOOKMARK_SEQ.NEXTVAL)를 사용하여 고유 ID 자동 생성
-        // 2. 동시성 문제(중복 ID) 완벽 해결
-        const sql = `
-            INSERT INTO BOOKMARK (Bookmark_id, Post_id, User_id)
-            VALUES (
-                BOOKMARK_SEQ.NEXTVAL,
-                :postId,
-                :userId
-            )
-        `;
-
         const pool = getPool();
         const conn = await pool.getConnection();
 
         try {
-            const result = await conn.execute(
-                sql,
-                { postId, userId },
-                { autoCommit: true }
+            // 1. 게시물 존재 여부 확인 (트랜잭션 시작)
+            const checkPost = await conn.execute(
+                `SELECT 1 FROM POST WHERE POST_ID = :postId`,
+                { postId },
+                { autoCommit: false }
             );
 
-            // 성공 시 명확한 결과 반환
+            if (checkPost.rows.length === 0) {
+                // 존재하지 않는 게시물
+                return { success: false, message: '존재하지 않거나 삭제된 게시물입니다.' };
+            }
+
+            // 2. 이미 북마크 되어 있는지 확인
+            const checkBookmark = await conn.execute(
+                `SELECT 1 FROM BOOKMARK WHERE POST_ID = :postId AND USER_ID = :userId`,
+                { postId, userId },
+                { autoCommit: false }
+            );
+
+            if (checkBookmark.rows.length > 0) {
+                return { success: false, message: '이미 북마크에 등록된 게시물입니다.' };
+            }
+
+            // 3. 북마크 추가
+            await conn.execute(
+                `INSERT INTO BOOKMARK (Bookmark_id, Post_id, User_id)
+                VALUES (BOOKMARK_SEQ.NEXTVAL, :postId, :userId)`,
+                { postId, userId },
+                { autoCommit: false }
+            );
+
+            // 트랜잭션 커밋
+            await conn.commit();
+
             return { success: true, message: '북마크가 추가되었습니다.' };
 
         } catch (err) {
-            // --- 예외 처리 핵심 로직 ---
-            
-            // 에러 1: 게시물이 삭제된 경우 (참조 무결성 위배)
-            // ORA-02291: integrity constraint violated - parent key not found
+            await conn.rollback();
+
             if (err.errorNum === 2291) {
                 console.warn(`[북마크 실패] 존재하지 않는 게시물 ID: ${postId}`);
                 return { success: false, message: '존재하지 않거나 삭제된 게시물입니다.' };
             }
 
-            // 에러 2: 이미 북마크한 경우 (중복 키)
-            // ORA-00001: unique constraint violated
             if (err.errorNum === 1) {
                 return { success: false, message: '이미 북마크에 등록된 게시물입니다.' };
             }
 
-            // 그 외 알 수 없는 에러는 로그 출력 후 throw (서버 에러 처리)
             console.error('북마크 추가 중 DB 오류:', err);
             throw err;
 
         } finally {
-            if (conn) {
-                try {
-                    await conn.close();
-                } catch (e) {
-                    console.error('Connection close error', e);
-                }
-            }
+            await conn.close();
         }
     },
+
 
     deleteBookmark: async (postId, userId) => {
         const sql = `
