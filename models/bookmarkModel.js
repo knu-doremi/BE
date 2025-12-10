@@ -31,12 +31,8 @@ module.exports = {
 
     addBookmark: async (postId, userId) => {
         const sql = `
-            INSERT INTO BOOKMARK (Bookmark_id, Post_id, User_id)
-            VALUES (
-                (SELECT NVL(MAX(Bookmark_id), 0) + 1 FROM BOOKMARK),
-                :postId,
-                :userId
-            )
+            INSERT INTO BOOKMARK (BOOKMARK_ID, POST_ID, USER_ID)
+            VALUES (BOOKMARK_SEQ.NEXTVAL, :postId, :userId)
         `;
 
         const pool = getPool();
